@@ -17,6 +17,7 @@ for any questions, please feel free to contact Adam Schneider
 """
 
 import os
+import pathlib
 from datetime import datetime
 import warnings
 
@@ -28,11 +29,19 @@ import colorcet as cc
 
 from score_db import score_db_base
 
+CONFIG_PATH = os.path.join(
+        pathlib.Path(__file__).parent.parent.parent.resolve(),
+        'conf'
+)
+CONFIG_FILE = 'agu_full.mplstyle'
+
+friendly_names_dict={"scout_run_v1":"NOAA Scout Run", "NASA_GEOSIT_GSISTATS":"NASA GEOS-IT", "std_GSIstage_1":"STD", "bias_post_corr_GSIstage_1":"Bias"}
+
 def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
         select_sat_name=True,
         experiment_list=['scout_run_v1',
                          'NASA_GEOSIT_GSISTATS'
-                         #'scout_runs_gsi3dvar_1979stream'
+                         #'scout_runs_gsi3dvar_1979stream'fcdvwq
                      ],
         array_metrics_list=['amsua_bias_post_corr_GSIstage_%',
                             #'amsua_std_%',
@@ -48,9 +57,14 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
         experiment_list: list of experiments to plot in sequence
         array_metrics_list: list of metrics to plot in sequence
     """
-    #if make_plot or make_line_plot:
-        #plt.style.use('agu_full.mplstyle')
-    
+
+    style_file = os.path.join(
+            CONFIG_PATH,
+            CONFIG_FILE
+    )
+    if make_plot or make_line_plot:
+        plt.style.use(style_file)
+
     if not select_array_metric_types:
         array_metrics_list=['%_all_stats_%']
     
@@ -95,18 +109,19 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
 
 # separate to be able to plot experiments on the same graphic / flattens data for now
 def run_line_plot(make_line_plot=True, select_array_metric_types=True,
-        select_sat_name=True, multi_stat=True,
-        experiment_list=['scout_run_v1',
-                         'NASA_GEOSIT_GSISTATS'
+        select_sat_name=True, multi_stat=False,
+        experiment_list=[#'scout_run_v1',
+                         'NASA_GEOSIT_GSISTATS',
+                         'scout_run_v1'
                          #'scout_runs_gsi3dvar_1979stream'
                      ],
-        array_metrics_list=['amsua_std_%',
-                            'amsua_bias_post_corr_GSIstage_%',
+        array_metrics_list=[#'amsua_std_%',
+                            #'amsua_bias_post_corr_GSIstage_%',
                             #'%_variance_%',
-                            #'amsua_nobs_used_%'
+                            'amsua_nobs_used_%'
                         ],
         sat_name = 'NOAA 15',
-        channel_indices = [4], #this is the specific location in the array, not based on the channel name that needs to be expanded
+        channel_indices = [4, 5, 6, 7], #this is the specific location in the array, not based on the channel name that needs to be expanded
         start_date = '1999-01-01 00:00:00',
         stop_date = '2001-06-01 00:00:00'):
     """modify the above input variables to configure and generate time series
@@ -115,25 +130,17 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         experiment_list: list of experiments to plot in sequence
         array_metrics_list: list of metrics to plot in sequence
     """
-    #if make_line_plot:
-        #plt.style.use('agu_full.mplstyle')
-        #plt.rcParams['font.size'] = 20
     
+    style_file = os.path.join(
+            CONFIG_PATH,
+            CONFIG_FILE
+    )
+    if make_plot or make_line_plot:
+        plt.style.use(style_file)
+        plt.rcParams['font.size'] = 20
+
     if not select_array_metric_types:
         array_metrics_list=['%_all_stats_%']
-    
-    # experiment_timeseries = dict()
-    # for experiment_name in experiment_list:
-    #     for array_metric_type in array_metrics_list:
-    #         timeseries_data = GSIStatsTimeSeries(start_date, stop_date,
-    #                         experiment_name=experiment_name, 
-    #                         select_array_metric_types=select_array_metric_types,
-    #                         array_metric_types=array_metric_type,
-    #                         select_sat_name=select_sat_name,
-    #                         sat_name=sat_name)
-    #         timeseries_data.flatten_by_channel(channel_indices=channel_indices)
-    #         #timeseries_data.build(by_channel=True)
-    #         experiment_timeseries[experiment_name] = timeseries_data
 
     if multi_stat:
         experiment_timeseries = dict()
@@ -154,15 +161,27 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                 
                 # Store the timeseries data by experiment name and array metric type
                 experiment_timeseries[experiment_name][array_metric_type] = timeseries_data
-
+    else:
+        experiment_timeseries = dict()
+        for experiment_name in experiment_list:
+            for array_metric_type in array_metrics_list:
+                timeseries_data = GSIStatsTimeSeries(start_date, stop_date,
+                                experiment_name=experiment_name, 
+                                select_array_metric_types=select_array_metric_types,
+                                array_metric_types=array_metric_type,
+                                select_sat_name=select_sat_name,
+                                sat_name=sat_name)
+                timeseries_data.flatten_by_channel(channel_indices=channel_indices)
+                #timeseries_data.build(by_channel=True)
+                experiment_timeseries[experiment_name] = timeseries_data
 
     if make_line_plot:
         # stat_label = 'amsua_bias_post_corr_GSIstage_1'
         # sensor_label = 'n15_amsua'
 
-        #plot_experiment_comparison(experiment_timeseries, experiment_list, ".", "5")
+        plot_experiment_comparison(experiment_timeseries, experiment_list, ".", "5, 6, 7, 8", ['#E4002B', '#003087'], 0)
 
-        plot_experiment_comparison_multi_stat(experiment_timeseries, experiment_list, ".", "5", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, ['#003087', '#0085CA', '#E4002B', '#ed9734'])
+        #plot_experiment_comparison_multi_stat(experiment_timeseries, experiment_list, ".", "8", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4)
         
         #plot_experiment_comparison_by_channel(experiment_timeseries, experiment_list, ".", channel_indices)
     else:
@@ -674,7 +693,7 @@ def make_line_plot_multi_expt(timeseries_dict, experiment_list):
     plt.show()
 
 
-def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, channel_list):
+def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, channel_list, expt_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for multiple stat and sensor combination, and save each plot.
     
@@ -698,10 +717,10 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
     for stat_label in statlabel_list:
         # Loop through each sensor_label in the sensorlabel_list
         for sensor_label in sensorlabel_list:
-            plt.figure(figsize=(12, 8), dpi=300)  # Create a new figure for each stat-sensor combination
+            plt.figure(figsize=(16, 12), dpi=300)  # Create a new figure for each stat-sensor combination
 
             # Loop through each experiment in the experiment list
-            for experiment_name in experiment_list:
+            for i, experiment_name in enumerate(experiment_list):
                 # Access the corresponding GSIStatsTimeSeries object from the dictionary
                 timeseries_obj = timeseries_dict.get(experiment_name)
 
@@ -713,23 +732,32 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
                     # Check if data exists for the stat_label and sensor_label
                     if time_valid and value:
                         # Plot the data for this experiment
-                        plt.plot(time_valid, value, label=experiment_name, alpha=0.7) #set plot for line or bar for bar or scatter for scatter
+                        color = expt_colors[i] if expt_colors else None
+                        experiment_label = experiment_name
+                        if experiment_name in friendly_names_dict:
+                            experiment_label = friendly_names_dict[experiment_name]
+                        plt.plot(time_valid, value, label=experiment_label, alpha=0.6, color=color) #set plot for line or bar for bar or scatter for scatter
                     else:
                         print(f"No data for {stat_label}, {sensor_label} in experiment: {experiment_name}")
                 else:
                     print(f"No data for experiment: {experiment_name}")
 
+            # Set y-axis limits if specified
+            if y_min is not None or y_max is not None:
+                plt.ylim(y_min, y_max)
+
             # Add labels and title for the plot
-            plt.xlabel('Time Valid')
-            plt.ylabel(f'{stat_label}')
+            plt.xlabel('Time Valid', fontsize=18)
+            plt.ylabel(f'{stat_label}', fontsize=18)
             if channel_list is None:
-                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments')
+                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments', fontsize=18)
             else:
-                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments for Channel {channel_list}')
-            plt.legend()
+                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments for Channels {channel_list}', fontsize=18)
+            plt.legend(fontsize=20)
 
             # Rotate x-axis labels for readability
-            plt.xticks(rotation=45)
+            plt.xticks(rotation=45, fontsize=20)
+            plt.yticks(fontsize=20)
 
             # Save the plot to the specified output directory
             plot_filename = f'{stat_label}_{sensor_label}_comparison.png'
@@ -741,7 +769,7 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
 
             print(f"Plot saved: {plot_filepath}")
 
-def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, output_dir, channel_list, stat_pair, array_metrics_list, line_colors=None):
+def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, output_dir, channel_list, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
 
@@ -770,7 +798,7 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
 
     # Loop through each sensor_label in the sensorlabel_list
     for sensor_label in sensorlabel_list:
-        plt.figure(figsize=(12, 8), dpi=300)  # Create a new figure for each sensor combination
+        plt.figure(figsize=(16, 12), dpi=300)  # Create a new figure for each sensor combination
 
         # Loop through each experiment in the experiment list
         for i, experiment_name in enumerate(experiment_list):
@@ -791,8 +819,14 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
                         # Check if data exists for the stat_label and sensor_label
                         if time_valid and value:
                             # Plot the data for this experiment and stat_label with custom color
-                            color = line_colors(i) if line_colors else None
-                            plt.plot(time_valid, value, label=f'{experiment_name} - {stat_label}', color=color, alpha=0.7)
+                            color = line_colors[i][j] if line_colors else None
+                            experiment_label = experiment_name
+                            stat_friendly = stat_label
+                            if experiment_name in friendly_names_dict:
+                                experiment_label = friendly_names_dict[experiment_name]
+                            if stat_label in friendly_names_dict:
+                                stat_friendly = friendly_names_dict[stat_label]
+                            plt.plot(time_valid, value, label=f'{experiment_label} - {stat_friendly}', color=color, alpha=0.6)
                         else:
                             print(f"No data for {stat_label}, {sensor_label} in experiment: {experiment_name}")
                     else:
@@ -800,14 +834,19 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
             else:
                 print(f"No data for experiment: {experiment_name}")
 
-        # Add labels and title for the plot
-        plt.xlabel('Time Valid')
-        plt.ylabel(f'Values for {stat_pair[0]} and {stat_pair[1]}')
-        plt.title(f'Comparison of {stat_pair[0]} and {stat_pair[1]} for {sensor_label} across Experiments for Channel {channel_list}')
-        plt.legend()
+        # Set y-axis limits if specified
+        if y_min is not None or y_max is not None:
+            plt.ylim(y_min, y_max)
 
-        # Rotate x-axis labels for readability
-        plt.xticks(rotation=45)
+        # Add labels and title for the plot
+        plt.xlabel('Time Valid', fontsize=18)
+        plt.ylabel(f'Statistic Values', fontsize=18)
+        plt.title(f'Comparison of NOAA and NASA Experiments for Channel {channel_list}', fontsize=18)
+        plt.legend(fontsize=20)
+
+        #Rotate x-axis labels for readability
+        plt.xticks(rotation=45, fontsize=20)
+        plt.yticks(fontsize=20)
 
         # Save the plot to the specified output directory
         plot_filename = f'{sensor_label}_comparison_{stat_pair[0]}_{stat_pair[1]}.png'
@@ -869,13 +908,15 @@ def plot_experiment_comparison_by_channel(timeseries_dict, experiment_list, outp
                         print(f"No data for experiment: {experiment_name}")
 
                 # Add labels and title for the plot
-                plt.xlabel('Time Valid')
-                plt.ylabel(f'{stat_label}')
+                plt.xlabel('Time Valid', fontsize=24)
+                plt.ylabel(f'{stat_label}', fontsize=24)
                 plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments for Channel {channel + 1}')
                 plt.legend()
 
                 # Rotate x-axis labels for readability
-                plt.xticks(rotation=45)
+                # Rotate x-axis labels for readability
+                plt.xticks(rotation=45, fontsize=24)
+                plt.yticks(fontsize=24)
 
                 # Save the plot to the specified output directory
                 plot_filename = f'{stat_label}_{sensor_label}_comparison.svg'
