@@ -1,12 +1,12 @@
 # score-plotting
-Python package to manage plotting and reporting tools for the UFS-RNR workflow.
+Python package to manage plotting and reporting tools for the score suite.
 score-plotting leverages the score-db database which uses the PostgreSQL database
 system hosted by AWS on an RDS instance (currently administered by PSL).
 
 # Installation and Environment Setup
 1. Clone the score-hv, score-db, and score-plotting repos.  All of these repos are required.
 score-db is responsible for managing the backend database which stores 
-diagnostics data related to UFS-RNR experiments.  score-db has several APIs
+diagnostics data.  score-db has several APIs
 to help users insert and collect data from the score-db database.  score-hv,
 on the other hand, is responsible for harvesting data from the diagnostic.
 score-plotting contains scripts for plotting statistics such as gsi stats and file counts.
@@ -35,7 +35,8 @@ $ pip install . # default installation into active environment
 4. Configure the PostgreSQL credentials and settings for the score-db by
 creating a `.env` file and by inserting the text shown below (note: this
 text is taken straight from the file `.env_example`).  You will need to 
-acquire the database password from the administrator (Sergey Frolov).
+acquire the database password from the administrator.
+
 Note: this MUST be done before installing score-db, or your database
 credentials will not work.
 
@@ -68,3 +69,6 @@ $ pip install -e . # editable installation into active enviroment, useful for de
 ```sh
 $ pip install -t [TARGET_DIR] --upgrade . # target installation into TARGET_DIR, useful for deploying for cylc workflows (see https://cylc.github.io/cylc-doc/stable/html/tutorial/runtime/introduction.html#id3)`
 ```
+# Interacting with score-db
+Please reference the score-db repository [documentation](https://github.com/NOAA-PSL/score-db?tab=readme-ov-file#using-the-apis-to-interact-with-score-db)
+for more information about how to use the APIs.
