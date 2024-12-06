@@ -12,7 +12,7 @@ LegendData = namedtuple('LegendData', ['loc', 'fancybox', 'edgecolor',
 
 AxesLabel = namedtuple('AxesLabel', ['axis', 'label', 'horizontalalignment'])
 
-DEFAULT_LEGEND_ATTRS = LegendData(loc='lower left', fancybox=None, 
+DEFAULT_LEGEND_ATTRS = LegendData(loc='upper right', fancybox=None, 
                                   edgecolor=None, framealpha=None, shadow=None,
                                   fontsize='small', facecolor=None)
 
@@ -24,7 +24,7 @@ plot_attrs = {'count': PlotAttrs(metric='count',
                                                             xmax=None,
                                                             xint=None,
                                                             ymin=0,
-                                                            ymax=80,
+                                                            ymax=140,
                                                             yint=None),
                                        legend=DEFAULT_LEGEND_ATTRS,
                                        xlabel=DEFAULT_XLABEL,
