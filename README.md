@@ -35,7 +35,8 @@ $ pip install . # default installation into active environment
 4. Configure the PostgreSQL credentials and settings for the score-db by
 creating a `.env` file and by inserting the text shown below (note: this
 text is taken straight from the file `.env_example`).  You will need to 
-acquire the database password from the administrator.
+acquire the database password from the administrator. Once you have created
+the `.env` file, copy it to `src/score_db/`.
 
 Note: this MUST be done before installing score-db, or your database
 credentials will not work.
