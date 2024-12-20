@@ -30,8 +30,8 @@ import colorcet as cc
 from score_db import score_db_base
 
 CONFIG_PATH = os.path.join(
-        pathlib.Path(__file__).parent.parent.parent.resolve(),
-        'conf'
+        pathlib.Path(__file__).parent.parent.resolve(),
+        'style_lib'
 )
 CONFIG_FILE = 'agu_full.mplstyle'
 

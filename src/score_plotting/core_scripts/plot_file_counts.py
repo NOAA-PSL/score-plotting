@@ -20,8 +20,8 @@ from pandas import DataFrame
 from matplotlib import pyplot as plt
 
 from score_db.expt_file_counts import ExptFileCountRequest
-from score_db.file_counts_plot_attrs import plot_attrs
-from score_db.plot_innov_stats import PlotInnovStatsRequest
+from score_plotting.attrs.file_counts_plot_attrs import plot_attrs
+from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
 # figure output directory
 WORK_DIR = os.path.join('/', 'media', 'darr', 'results', 'figures')

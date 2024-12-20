@@ -26,7 +26,7 @@ from score_db import time_utils
 from score_db.time_utils import DateRange
 from score_hv.harvester_base import harvest
 from score_db.expt_metrics import ExptMetricInputData, ExptMetricRequest
-from score_db.innov_stats_plot_attrs import plot_attrs, region_labels
+from score_plotting.attrs.innov_stats_plot_attrs import plot_attrs, region_labels
 
 
 RequestData = namedtuple(
