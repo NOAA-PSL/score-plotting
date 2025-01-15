@@ -35,7 +35,7 @@ CONFIG_PATH = os.path.join(
 )
 CONFIG_FILE = 'agu_full.mplstyle'
 
-friendly_names_dict={"scout_run_v1":"NOAA Scout Run", "NASA_GEOSIT_GSISTATS":"NASA GEOS-IT", "std_GSIstage_1":"STD", "bias_post_corr_GSIstage_1":"Bias"}
+friendly_names_dict={"scout_run_v1":"NOAA Scout Run", "NASA_GEOSIT_GSISTATS":"NASA GEOS-IT", "std_GSIstage_1":"STD", "bias_post_corr_GSIstage_1":"Bias"} # could this be done by string matching for the std/bias etc part? we could have a basic friendly dict for that
 
 def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
         select_sat_name=True,
@@ -50,7 +50,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                         ],
         sat_name = 'NOAA 15',
         start_date = '1979-01-01 00:00:00',
-        stop_date = '2001-06-01 00:00:00'):
+        stop_date = '2001-06-01 00:00:00'): #default start and stop date should be 1979 - 2025? #TODO
     """modify the above input variables to configure and generate time series
     data for various GSI related statistics
         
@@ -84,7 +84,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                 timeseries_data.plot()
                 plt.suptitle(experiment_name)
                 #plt.show()
-                metric_string = array_metric_type.split('%')[1] #this won't always work if you give a specific sensor value
+                metric_string = array_metric_type.split('%')[1] #this won't always work if you give a specific sensor value #TODO
                 plt.savefig(os.path.join(
                                 'results',
                                 f'gsi{metric_string}{experiment_name}.png'),
@@ -93,7 +93,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
 
             elif make_line_plot:
                 stat_label = 'bias_post_corr_GSIstage_1'
-                #stat_label = 'std_GSIstage_1'
+                #stat_label = 'std_GSIstage_1' #TODO
                 sensor_label = 'n15_amsua'
                 y_min = -0.5
                 y_max = 0.6
@@ -121,7 +121,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                             'amsua_nobs_used_%'
                         ],
         sat_name = 'NOAA 15',
-        channel_indices = [4, 5, 6, 7], #this is the specific location in the array, not based on the channel name that needs to be expanded
+        channel_indices = [4, 5, 6, 7], #this is the specific location in the array, not based on the channel name that needs to be expanded #TODO
         start_date = '1999-01-01 00:00:00',
         stop_date = '2001-06-01 00:00:00'):
     """modify the above input variables to configure and generate time series
@@ -135,7 +135,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
             CONFIG_PATH,
             CONFIG_FILE
     )
-    if make_plot or make_line_plot:
+    if make_line_plot:
         plt.style.use(style_file)
         plt.rcParams['font.size'] = 20
 
@@ -179,11 +179,11 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         # stat_label = 'amsua_bias_post_corr_GSIstage_1'
         # sensor_label = 'n15_amsua'
 
-        plot_experiment_comparison(experiment_timeseries, experiment_list, ".", "5, 6, 7, 8", ['#E4002B', '#003087'], 0)
+        plot_experiment_comparison(experiment_timeseries, experiment_list, ".", "5, 6, 7, 8", ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
 
-        #plot_experiment_comparison_multi_stat(experiment_timeseries, experiment_list, ".", "8", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4)
+        #plot_experiment_comparison_multi_stat(experiment_timeseries, experiment_list, ".", "8", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
         
-        #plot_experiment_comparison_by_channel(experiment_timeseries, experiment_list, ".", channel_indices)
+        #plot_experiment_comparison_by_channel(experiment_timeseries, experiment_list, ".", channel_indices) #TODO make accessible via code pathways 
     else:
         timeseries_data.print_init_time()
 
@@ -330,6 +330,12 @@ class GSIStatsTimeSeries(object):
         
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
 
+    def get_channel_indices_from_names(self, channel_names): #TODO: current function 
+        channel_indices_names = ['index', 'name'] #store this and then we can pull from it (we need to be able to pull the name back out for plotting the values)
+        self.channel_indices = dict()
+
+        
+
     def flatten(self):
         self.unique_stat_list = extract_unique_stats(
                                             set(self.data_frame['metric_name']))
@@ -396,7 +402,7 @@ class GSIStatsTimeSeries(object):
         
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
 
-    #right now this function just selects by the channel indices but it should be expanded to use channel names and then applied to the value indices
+    #right now this function just selects by the channel indices but it should be expanded to use channel names and then applied to the value indices #TODO Channel stuff
     def flatten_by_channel(self, channel_indices):
         if channel_indices is None:
             self.flatten() #do a basic full flatten instead
@@ -428,8 +434,10 @@ class GSIStatsTimeSeries(object):
                                              row.time_valid.day,
                                              row.time_valid.year,)
                 
+                row.array_index_values #has the channel names to index
+
                 #flatten to only include given channels
-                value = np.nansum([np.nan if row.value[i] is None else row.value[i] for i in channel_indices if i < len(row.value)])
+                value = np.nansum([np.nan if row.value[i] is None else row.value[i] for i in channel_indices if i < len(row.value)])#TODO - this is the line that needs to change
 
                 # Check if stat_label exists in timestamp_dict
                 if stat_label not in self.timestamp_dict:
@@ -931,7 +939,7 @@ def plot_experiment_comparison_by_channel(timeseries_dict, experiment_list, outp
 
 
 def main():
-    run()
+    run_line_plot()
 
 if __name__=='__main__':
     main()
