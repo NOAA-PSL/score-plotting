@@ -49,8 +49,9 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                             #'amsua_use_%'
                         ],
         sat_name = 'NOAA 15',
+        channel_list = ['5','6','7'],
         start_date = '1979-01-01 00:00:00',
-        stop_date = '2001-06-01 00:00:00'): #default start and stop date should be 1979 - 2025? #TODO
+        stop_date = '2024-06-01 00:00:00'): #default start and stop date should be 1979 - 2025? #TODO
     """modify the above input variables to configure and generate time series
     data for various GSI related statistics
         
@@ -76,9 +77,9 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                             array_metric_types=array_metric_type,
                             select_sat_name=select_sat_name,
                             sat_name=sat_name)
-            timeseries_data.build(all_channel_max=False, # set max or mean
-                                  all_channel_mean=False,
-                                  by_channel=True) # other False
+            # timeseries_data.build(all_channel_max=False, # set max or mean #TODO: uncomment this, it should be under make_plot most likely 
+            #                       all_channel_mean=False,
+            #                       by_channel=True) # other False #TODO remove these hardcodes
 
             if make_plot:
                 timeseries_data.plot()
@@ -97,7 +98,8 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                 sensor_label = 'n15_amsua'
                 y_min = -0.5
                 y_max = 0.6
-                timeseries_data.plot_line_plot(stat_label=stat_label, sensor_label=sensor_label, experiment_name=experiment_name, y_min=y_min, y_max=y_max)
+                timeseries_data.flatten_by_channel(channel_list)
+                timeseries_data.plot_line_plot(stat_label=stat_label, sensor_label=sensor_label, experiment_name=experiment_name, channels_to_plot=channel_list, y_min=y_min, y_max=y_max)
                 metric_string = array_metric_type.split('%')[0] #again not expandable 
                 plt.savefig(os.path.join(
                                 #'results',
@@ -121,7 +123,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                             'amsua_nobs_used_%'
                         ],
         sat_name = 'NOAA 15',
-        channel_indices = [4, 5, 6, 7], #this is the specific location in the array, not based on the channel name that needs to be expanded #TODO
+        channel_list = [5, 6, 7, 8], 
         start_date = '1999-01-01 00:00:00',
         stop_date = '2001-06-01 00:00:00'):
     """modify the above input variables to configure and generate time series
@@ -157,7 +159,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                                     sat_name=sat_name)
                 
                 # Flatten data for the selected channels
-                timeseries_data.flatten_by_channel(channel_indices=channel_indices)
+                timeseries_data.flatten_by_channel(channel_list=channel_list)
                 
                 # Store the timeseries data by experiment name and array metric type
                 experiment_timeseries[experiment_name][array_metric_type] = timeseries_data
@@ -171,7 +173,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                                 array_metric_types=array_metric_type,
                                 select_sat_name=select_sat_name,
                                 sat_name=sat_name)
-                timeseries_data.flatten_by_channel(channel_indices=channel_indices)
+                timeseries_data.flatten_by_channel(channel_list=channel_list)
                 #timeseries_data.build(by_channel=True)
                 experiment_timeseries[experiment_name] = timeseries_data
 
@@ -330,11 +332,6 @@ class GSIStatsTimeSeries(object):
         
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
 
-    def get_channel_indices_from_names(self, channel_names): #TODO: current function 
-        channel_indices_names = ['index', 'name'] #store this and then we can pull from it (we need to be able to pull the name back out for plotting the values)
-        self.channel_indices = dict()
-
-        
 
     def flatten(self):
         self.unique_stat_list = extract_unique_stats(
@@ -402,12 +399,8 @@ class GSIStatsTimeSeries(object):
         
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
 
-    #right now this function just selects by the channel indices but it should be expanded to use channel names and then applied to the value indices #TODO Channel stuff
-    def flatten_by_channel(self, channel_indices):
-        if channel_indices is None:
-            self.flatten() #do a basic full flatten instead
-            return
 
+    def flatten_by_channel(self, channel_list):
         self.unique_stat_list = extract_unique_stats(
                                             set(self.data_frame['metric_name']))
         
@@ -415,9 +408,9 @@ class GSIStatsTimeSeries(object):
         self.timelabel_dict = dict()
         self.value_dict = dict()
         
-        
         self.sensorlabel_list = list()
         self.statlabel_list = list()
+        self.channel_list = list()
         yval = 0
         for row in self.data_frame.itertuples():
             metric_name_parts = row.metric_name.split('_')
@@ -434,45 +427,58 @@ class GSIStatsTimeSeries(object):
                                              row.time_valid.day,
                                              row.time_valid.year,)
                 
-                row.array_index_values #has the channel names to index
 
-                #flatten to only include given channels
-                value = np.nansum([np.nan if row.value[i] is None else row.value[i] for i in channel_indices if i < len(row.value)])#TODO - this is the line that needs to change
+                for i, channel in enumerate(row.array_index_values):
+                    if channel_list is not None and channel not in channel_list: #TODO: check this functionality
+                        continue 
 
-                # Check if stat_label exists in timestamp_dict
-                if stat_label not in self.timestamp_dict:
-                    self.timestamp_dict[stat_label] = {}  # Create the first level dictionary for stat_label
+                    #value = np.nansum([np.nan if row.value[i] is None else row.value[i] for i in channel_indices if i < len(row.value)])#TODO - this is the line that needs to change
+                    value = np.nan if row.value[i] is None else row.value[i]
 
-                # Check if sensor_label exists under stat_label in timestamp_dict
-                if sensor_label not in self.timestamp_dict[stat_label]:
-                    self.timestamp_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+                    # Check if stat_label exists in timestamp_dict
+                    if stat_label not in self.timestamp_dict:
+                        self.timestamp_dict[stat_label] = {}  # Create the first level dictionary for stat_label
 
-                # Check if stat_label exists in timelabel_dict
-                if stat_label not in self.timelabel_dict:
-                    self.timelabel_dict[stat_label] = {}  # Create the first level dictionary for stat_label
+                    # Check if sensor_label exists under stat_label in timestamp_dict
+                    if sensor_label not in self.timestamp_dict[stat_label]:
+                        self.timestamp_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
 
-                # Check if sensor_label exists under stat_label in timelabel_dict
-                if sensor_label not in self.timelabel_dict[stat_label]:
-                    self.timelabel_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
-                
-                # Check if stat_label exists in timelabel_dict
-                if stat_label not in self.value_dict:
-                    self.value_dict[stat_label] = {}  # Create the first level dictionary for stat_label
+                    #Check if channel 
+                    if channel not in self.timestamp_dict[stat_label][sensor_label]:
+                        self.timestamp_dict[stat_label][sensor_label][channel] = []
 
-                # Check if sensor_label exists under stat_label in timelabel_dict
-                if sensor_label not in self.value_dict[stat_label]:
-                    self.value_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+                    # Check if stat_label exists in timelabel_dict
+                    if stat_label not in self.timelabel_dict:
+                        self.timelabel_dict[stat_label] = {}  # Create the first level dictionary for stat_label
 
-                #print(gsi_stage, stat_name, sensor_label, time_label, value)
-                self.timestamp_dict[stat_label][sensor_label].append(timestamp)
-                self.timelabel_dict[stat_label][sensor_label].append(time_label)
-                self.value_dict[stat_label][sensor_label].append(value)
-                
-                if not sensor_label in self.sensorlabel_list:
-                    self.sensorlabel_list.append(sensor_label)
-                
-                if not stat_label in self.statlabel_list:
-                    self.statlabel_list.append(stat_label)
+                    # Check if sensor_label exists under stat_label in timelabel_dict
+                    if sensor_label not in self.timelabel_dict[stat_label]:
+                        self.timelabel_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+                    
+                    # Check if stat_label exists in timelabel_dict
+                    if stat_label not in self.value_dict:
+                        self.value_dict[stat_label] = {}  # Create the first level dictionary for stat_label
+
+                    # Check if sensor_label exists under stat_label in timelabel_dict
+                    if sensor_label not in self.value_dict[stat_label]:
+                        self.value_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+
+                    if channel not in self.value_dict[stat_label][sensor_label]:
+                        self.value_dict[stat_label][sensor_label][channel] = []                    
+
+                    #print(gsi_stage, stat_name, sensor_label, time_label, value)
+                    self.timestamp_dict[stat_label][sensor_label][channel].append(timestamp)
+                    self.timelabel_dict[stat_label][sensor_label][channel].append(time_label)
+                    self.value_dict[stat_label][sensor_label][channel].append(value)
+                    
+                    if not sensor_label in self.sensorlabel_list:
+                        self.sensorlabel_list.append(sensor_label)
+                    
+                    if not stat_label in self.statlabel_list:
+                        self.statlabel_list.append(stat_label)
+
+                    if not channel in self.channel_list:
+                        self.channel_list.append(channel)
         
     def plot(self, all_channel_mean=False, all_channel_max=True):
         """demonstrate how to plot metrics stored in a backened SQL database
@@ -564,7 +570,7 @@ class GSIStatsTimeSeries(object):
         print("GSIStatsTimeSeries object init date and time: ",
               f"{self.init_datetime}") 
 
-    def plot_line_plot(self, stat_label, sensor_label, experiment_name, channels_to_plot=[4, 5, 6, 7], y_min=None, y_max=None):
+    def plot_line_plot(self, stat_label, sensor_label, experiment_name, channels_to_plot, y_min=None, y_max=None):
         """
         Plot time series for specified stat_label, sensor_label, and channels.
         
@@ -584,16 +590,16 @@ class GSIStatsTimeSeries(object):
         for channel in channels_to_plot:
             try:
                 # Extract the values for the specified stat_label and sensor_label
-                channel_values = self.value_dict[stat_label][sensor_label]
+                channel_values = self.value_dict[stat_label][sensor_label][channel]
 
                 # Extract the corresponding timestamps
-                timestamps = self.timestamp_dict[stat_label][sensor_label]
+                timestamps = self.timestamp_dict[stat_label][sensor_label][channel]
 
                 # Ensure the channel index is valid and plot the values
                 if len(channel_values) > channel:
-                    plt.plot(timestamps, [v[channel] for v in channel_values], label=f'Channel {channel + 1}', alpha=0.7)
+                    plt.plot(timestamps, channel_values, label=f'Channel {channel}', alpha=0.7)
                 else:
-                    print(f"Channel {channel + 1} not found for {stat_label}, {sensor_label}")
+                    print(f"Channel {channel} not found for {stat_label}, {sensor_label}")
                     
             except KeyError as e:
                 print(f"Missing data for {stat_label}, {sensor_label}: {e}")
@@ -736,7 +742,7 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
                     # Safely access the nested dictionary for time_valid and value
                     time_valid = timeseries_obj.timestamp_dict.get(stat_label, {}).get(sensor_label, [])
                     value = timeseries_obj.value_dict.get(stat_label, {}).get(sensor_label, [])
-
+                    #TODO: update to handle channels?
                     # Check if data exists for the stat_label and sensor_label
                     if time_valid and value:
                         # Plot the data for this experiment
@@ -823,7 +829,7 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
                         # Safely access the nested dictionary for time_valid and value
                         time_valid = timeseries_obj.timestamp_dict.get(stat_label, {}).get(sensor_label, [])
                         value = timeseries_obj.value_dict.get(stat_label, {}).get(sensor_label, [])
-
+                        #TODO: update to handle channels?
                         # Check if data exists for the stat_label and sensor_label
                         if time_valid and value:
                             # Plot the data for this experiment and stat_label with custom color
@@ -904,7 +910,7 @@ def plot_experiment_comparison_by_channel(timeseries_dict, experiment_list, outp
                     if timeseries_obj:
                         # Safely access the nested dictionary for time_valid and value
                         time_valid = timeseries_obj.timestamp_dict.get(stat_label, {}).get(sensor_label, [])
-                        value = timeseries_obj.value_dict.get(stat_label, {}).get(sensor_label, [])[channel]
+                        value = timeseries_obj.value_dict.get(stat_label, {}).get(sensor_label, [])[channel] #TODO: does this work with new structure?
 
                         # Check if data exists for the stat_label and sensor_label
                         if time_valid and value:
@@ -939,7 +945,8 @@ def plot_experiment_comparison_by_channel(timeseries_dict, experiment_list, outp
 
 
 def main():
-    run_line_plot()
+    run()
+    #run_line_plot()
 
 if __name__=='__main__':
     main()
