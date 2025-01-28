@@ -99,7 +99,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                 y_min = -0.5
                 y_max = 0.6
                 timeseries_data.flatten_by_channel(channel_list)
-                timeseries_data.plot_line_plot(stat_label=stat_label, sensor_label=sensor_label, experiment_name=experiment_name, channels_to_plot=channel_list, y_min=y_min, y_max=y_max)
+                timeseries_data.plot_line_plot_by_channel(stat_label=stat_label, sensor_label=sensor_label, experiment_name=experiment_name, channels_to_plot=channel_list, y_min=y_min, y_max=y_max)
                 metric_string = array_metric_type.split('%')[0] #again not expandable 
                 plt.savefig(os.path.join(
                                 #'results',
@@ -441,11 +441,11 @@ class GSIStatsTimeSeries(object):
 
                     # Check if sensor_label exists under stat_label in timestamp_dict
                     if sensor_label not in self.timestamp_dict[stat_label]:
-                        self.timestamp_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+                        self.timestamp_dict[stat_label][sensor_label] = {}  # Second level dictionary
 
                     #Check if channel 
                     if channel not in self.timestamp_dict[stat_label][sensor_label]:
-                        self.timestamp_dict[stat_label][sensor_label][channel] = []
+                        self.timestamp_dict[stat_label][sensor_label][channel] = [] #Empty list for channel level values
 
                     # Check if stat_label exists in timelabel_dict
                     if stat_label not in self.timelabel_dict:
@@ -453,7 +453,10 @@ class GSIStatsTimeSeries(object):
 
                     # Check if sensor_label exists under stat_label in timelabel_dict
                     if sensor_label not in self.timelabel_dict[stat_label]:
-                        self.timelabel_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+                        self.timelabel_dict[stat_label][sensor_label] = {}  # Second level dictionary
+
+                    if channel not in self.timelabel_dict[stat_label][sensor_label]:
+                        self.timelabel_dict[stat_label][sensor_label][channel] = [] #Empty list for channel level values
                     
                     # Check if stat_label exists in timelabel_dict
                     if stat_label not in self.value_dict:
@@ -461,10 +464,10 @@ class GSIStatsTimeSeries(object):
 
                     # Check if sensor_label exists under stat_label in timelabel_dict
                     if sensor_label not in self.value_dict[stat_label]:
-                        self.value_dict[stat_label][sensor_label] = []  # Create an empty list for sensor_label
+                        self.value_dict[stat_label][sensor_label] = {}  # Second level dictionary
 
                     if channel not in self.value_dict[stat_label][sensor_label]:
-                        self.value_dict[stat_label][sensor_label][channel] = []                    
+                        self.value_dict[stat_label][sensor_label][channel] = []  # Empty list for channel level values  
 
                     #print(gsi_stage, stat_name, sensor_label, time_label, value)
                     self.timestamp_dict[stat_label][sensor_label][channel].append(timestamp)
@@ -570,7 +573,7 @@ class GSIStatsTimeSeries(object):
         print("GSIStatsTimeSeries object init date and time: ",
               f"{self.init_datetime}") 
 
-    def plot_line_plot(self, stat_label, sensor_label, experiment_name, channels_to_plot, y_min=None, y_max=None):
+    def plot_line_plot_by_channel(self, stat_label, sensor_label, experiment_name, channels_to_plot, y_min=None, y_max=None):
         """
         Plot time series for specified stat_label, sensor_label, and channels.
         
@@ -595,8 +598,8 @@ class GSIStatsTimeSeries(object):
                 # Extract the corresponding timestamps
                 timestamps = self.timestamp_dict[stat_label][sensor_label][channel]
 
-                # Ensure the channel index is valid and plot the values
-                if len(channel_values) > channel:
+                # Ensure the channel is valid and plot the values
+                if channel_values is not None:
                     plt.plot(timestamps, channel_values, label=f'Channel {channel}', alpha=0.7)
                 else:
                     print(f"Channel {channel} not found for {stat_label}, {sensor_label}")
