@@ -719,7 +719,7 @@ def make_line_plot_multi_expt(timeseries_dict, experiment_list):
     plt.tight_layout()
     plt.show()
 
-
+#This function plots all channels on the same plot, but each stat and sensor combo gets it's own plot
 def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, channel_list, expt_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for multiple stat and sensor combination, and save each plot.
@@ -819,7 +819,7 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
 
             print(f"Plot saved: {plot_filepath}")
 
-
+#This function plots each channel, stat, sensor combo on it's own plot
 def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, output_dir, expt_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for multiple stat and sensor combination, and save each plot.
@@ -924,6 +924,7 @@ def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, out
 
                 print(f"Plot saved: {plot_filepath}")
 
+#This function plots stat and sensor combos on the same plot wihtout regard to separate channels (expects channels averaged and a list of which channels are included for title)
 def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, output_dir, channel_list, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
@@ -1013,6 +1014,7 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
 
         print(f"Plot saved: {plot_filepath}")
 
+#This function plots stat, sensor, and channels all on the same plot 
 def plot_experiment_comparison_multi_stat_all_channel(timeseries_dict, experiment_list, output_dir, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
@@ -1109,6 +1111,7 @@ def plot_experiment_comparison_multi_stat_all_channel(timeseries_dict, experimen
 
         print(f"Plot saved: {plot_filepath}")
 
+#This function plots stat and sensor combos on the same plot but each channel receives it's own plot
 def plot_experiment_comparison_multi_stat_per_channel(timeseries_dict, experiment_list, output_dir, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
