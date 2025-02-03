@@ -111,16 +111,16 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
 
 # separate to be able to plot experiments on the same graphic / flattens data for now
 def run_line_plot(make_line_plot=True, select_array_metric_types=True,
-        select_sat_name=True, multi_stat=True,
+        select_sat_name=True, multi_stat=False,
         experiment_list=[#'scout_run_v1',
                          'NASA_GEOSIT_GSISTATS',
                          'scout_run_v1'
                          #'scout_runs_gsi3dvar_1979stream'
                      ],
-        array_metrics_list=['amsua_std_%',
-                            'amsua_bias_post_corr_GSIstage_%',
+        array_metrics_list=[#'amsua_std_%',
+                            #'amsua_bias_post_corr_GSIstage_%',
                             #'%_variance_%',
-                            #'amsua_nobs_used_%'
+                            'amsua_nobs_used_%'
                         ],
         sat_name = 'NOAA 15',
         channel_list = ['3', '6', '8', '10'], 
@@ -181,14 +181,19 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         # stat_label = 'amsua_bias_post_corr_GSIstage_1'
         # sensor_label = 'n15_amsua'
 
-        #plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
+        #all channels on one plot, single stat
+        plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
 
+        #Each channel on it's own plot, single stat
         #plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, ".", ['#E4002B', '#003087'], 0)
 
+        #TODO: this is not channel based, should be using flatten? 
         #plot_experiment_comparison_multi_stat(experiment_timeseries, experiment_list, ".", "8", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
         
+        #Multi stat, all channels on the same plot
         #plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
 
+        #Multi stat, each channel on their own plot 
         plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
 
     else:
