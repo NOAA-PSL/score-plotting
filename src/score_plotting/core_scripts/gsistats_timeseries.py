@@ -111,19 +111,21 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
 
 # separate to be able to plot experiments on the same graphic / flattens data for now
 def run_line_plot(make_line_plot=True, select_array_metric_types=True,
-        select_sat_name=True, multi_stat=False,
+        select_sat_name=True, multi_stat=False, per_channel=True,
         experiment_list=[#'scout_run_v1',
                          'NASA_GEOSIT_GSISTATS',
-                         'scout_run_v1'
+                         'scout_run_v1', #171
+                         'replay_observer_diagnostic_v1'
                          #'scout_runs_gsi3dvar_1979stream'
                      ],
+        experiment_id_list=[185, 171, 175],
         array_metrics_list=[#'amsua_std_%',
                             #'amsua_bias_post_corr_GSIstage_%',
                             #'%_variance_%',
                             'amsua_nobs_used_%'
                         ],
         sat_name = 'NOAA 15',
-        channel_list = ['3', '6', '8', '10'], 
+        channel_list = None, 
         start_date = '1999-01-01 00:00:00',
         stop_date = '2024-12-01 00:00:00'):
     """modify the above input variables to configure and generate time series
@@ -147,7 +149,8 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
     if multi_stat:
         experiment_timeseries = dict()
 
-        for experiment_name in experiment_list:
+        #for experiment_name in experiment_list:
+        for i, experiment_name in enumerate(experiment_list):
             experiment_timeseries[experiment_name] = dict()  # Create a dictionary for each experiment
             for array_metric_type in array_metrics_list:
                 timeseries_data = GSIStatsTimeSeries(
@@ -156,7 +159,8 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                                     select_array_metric_types=select_array_metric_types,
                                     array_metric_types=array_metric_type,
                                     select_sat_name=select_sat_name,
-                                    sat_name=sat_name)
+                                    sat_name=sat_name,
+                                    experiment_id=experiment_id_list[i])
                 
                 # Flatten data for the selected channels
                 timeseries_data.flatten_by_channel(channel_list=channel_list)
@@ -180,12 +184,22 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
     if make_line_plot:
         # stat_label = 'amsua_bias_post_corr_GSIstage_1'
         # sensor_label = 'n15_amsua'
+        if per_channel:
+            if multi_stat:
+                plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#E4002B', '#f2901f'], ['#003087', '#0085CA'], ['#46990f', '#c1e67c']]) #TODO make accessible via code pathways #['#003087', '#0085CA'], colors for scout run
+            else:
+                plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, ".", ['#E4002B', '#003087', '#46990f'], 0)
+        else:
+            if multi_stat:
+                plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
+            else: 
+                plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
 
         #all channels on one plot, single stat
-        plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
+        #plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
 
-        #Each channel on it's own plot, single stat
-        #plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, ".", ['#E4002B', '#003087'], 0)
+        #Each channel on it's own plot, single stat -- requires not the multi stat processing for how it's written right now
+        #plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, ".", ['#E4002B', '#003087', '#46990f'], 0)
 
         #TODO: this is not channel based, should be using flatten? 
         #plot_experiment_comparison_multi_stat(experiment_timeseries, experiment_list, ".", "8", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
@@ -194,7 +208,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         #plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
 
         #Multi stat, each channel on their own plot 
-        plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
+        #plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#E4002B', '#f2901f'], ['#003087', '#0085CA'], ['#46990f', '#c1e67c']]) #TODO make accessible via code pathways #['#003087', '#0085CA'], colors for scout run
 
     else:
         timeseries_data.print_init_time()
@@ -206,7 +220,8 @@ class GSIStatsTimeSeries(object):
                 select_array_metric_types = True,
                 array_metric_types='%',
                 select_sat_name = False,
-                sat_name = None
+                sat_name = None,
+                experiment_id=None,
                 ):
         """Download metrics data for given experiment name
         """
@@ -216,6 +231,7 @@ class GSIStatsTimeSeries(object):
         self.array_metric_types = array_metric_types
         self.select_sat_name = select_sat_name
         self.sat_name = sat_name
+        self.experiment_id = experiment_id
         self.get_data_frame(start_date, stop_date)
 
         
@@ -256,6 +272,14 @@ class GSIStatsTimeSeries(object):
         if self.select_sat_name:
             request_dict['params']['filters']['sat_meta'] = {
                 'sat_name': {'exact': self.sat_name}
+            }
+        
+        if self.experiment_id is not None:
+            request_dict['params']['filters']['experiment'] = {
+                'experiment_name':
+                                  {'exact':
+                                     self.experiment_name},
+                'id': self.experiment_id
             }
 
         db_action_response = score_db_base.handle_request(request_dict)    
