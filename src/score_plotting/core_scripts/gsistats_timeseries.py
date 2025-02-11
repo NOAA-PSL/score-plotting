@@ -127,7 +127,14 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         sat_name = 'NOAA 15',
         channel_list = None, 
         start_date = '1999-01-01 00:00:00',
-        stop_date = '2024-12-01 00:00:00'):
+        stop_date = '2024-12-01 00:00:00',
+        color_list = [['#E4002B', '#f2901f'], 
+                      ['#003087', '#0085CA'],
+                      ['#46990f', '#c1e67c']],
+        stat_pair = ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'],
+        y_min = None, 
+        y_max = None,
+        output_directory="."):
     """modify the above input variables to configure and generate time series
     data for various GSI related statistics
         
@@ -182,18 +189,16 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                 experiment_timeseries[experiment_name] = timeseries_data
 
     if make_line_plot:
-        # stat_label = 'amsua_bias_post_corr_GSIstage_1'
-        # sensor_label = 'n15_amsua'
         if per_channel:
             if multi_stat:
-                plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#E4002B', '#f2901f'], ['#003087', '#0085CA'], ['#46990f', '#c1e67c']]) #TODO make accessible via code pathways #['#003087', '#0085CA'], colors for scout run
+                plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, output_directory, stat_pair, array_metrics_list, color_list, y_min, y_max)
             else:
-                plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, ".", ['#E4002B', '#003087', '#46990f'], 0)
+                plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, output_directory, color_list, y_min, y_max)
         else:
             if multi_stat:
-                plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, ".", ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'], array_metrics_list, [['#003087', '#0085CA'], ['#E4002B', '#f2901f']], -0.2, 0.4) #TODO make accessible via code pathways
+                plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, output_directory, stat_pair, array_metrics_list, color_list, y_min, y_max) 
             else: 
-                plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
+                plot_experiment_comparison(experiment_timeseries, experiment_list, output_directory, channel_list, color_list, y_min, y_max) 
 
         #all channels on one plot, single stat
         #plot_experiment_comparison(experiment_timeseries, experiment_list, ".", channel_list, ['#E4002B', '#003087'], 0) #TODO remove the hard coded stuff 
