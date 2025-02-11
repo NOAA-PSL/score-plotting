@@ -111,18 +111,17 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
 
 # separate to be able to plot experiments on the same graphic / flattens data for now
 def run_line_plot(make_line_plot=True, select_array_metric_types=True,
-        select_sat_name=True, multi_stat=False, per_channel=True,
+        select_sat_name=True, multi_stat=True, per_channel=True,
         experiment_list=[#'scout_run_v1',
                          'NASA_GEOSIT_GSISTATS',
                          'scout_run_v1', #171
                          'replay_observer_diagnostic_v1'
                          #'scout_runs_gsi3dvar_1979stream'
                      ],
-        experiment_id_list=[185, 171, 175],
-        array_metrics_list=[#'amsua_std_%',
-                            #'amsua_bias_post_corr_GSIstage_%',
+        array_metrics_list=['amsua_std_%',
+                            'amsua_bias_post_corr_GSIstage_%',
                             #'%_variance_%',
-                            'amsua_nobs_used_%'
+                            #'amsua_nobs_used_%'
                         ],
         sat_name = 'NOAA 15',
         channel_list = None, 
@@ -157,7 +156,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         experiment_timeseries = dict()
 
         #for experiment_name in experiment_list:
-        for i, experiment_name in enumerate(experiment_list):
+        for experiment_name in experiment_list:
             experiment_timeseries[experiment_name] = dict()  # Create a dictionary for each experiment
             for array_metric_type in array_metrics_list:
                 timeseries_data = GSIStatsTimeSeries(
@@ -166,8 +165,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
                                     select_array_metric_types=select_array_metric_types,
                                     array_metric_types=array_metric_type,
                                     select_sat_name=select_sat_name,
-                                    sat_name=sat_name,
-                                    experiment_id=experiment_id_list[i])
+                                    sat_name=sat_name)
                 
                 # Flatten data for the selected channels
                 timeseries_data.flatten_by_channel(channel_list=channel_list)
@@ -277,14 +275,6 @@ class GSIStatsTimeSeries(object):
         if self.select_sat_name:
             request_dict['params']['filters']['sat_meta'] = {
                 'sat_name': {'exact': self.sat_name}
-            }
-        
-        if self.experiment_id is not None:
-            request_dict['params']['filters']['experiment'] = {
-                'experiment_name':
-                                  {'exact':
-                                     self.experiment_name},
-                'id': self.experiment_id
             }
 
         db_action_response = score_db_base.handle_request(request_dict)    
