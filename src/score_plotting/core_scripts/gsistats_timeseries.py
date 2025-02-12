@@ -41,7 +41,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
         select_sat_name=True,
         experiment_list=['scout_run_v1',
                          'NASA_GEOSIT_GSISTATS'
-                         #'scout_runs_gsi3dvar_1979stream'fcdvwq
+                         #'scout_runs_gsi3dvar_1979stream'
                      ],
         array_metrics_list=['amsua_bias_post_corr_GSIstage_%',
                             #'amsua_std_%',
@@ -51,7 +51,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
         sat_name = 'NOAA 15',
         channel_list = ['5','6','7'],
         start_date = '1979-01-01 00:00:00',
-        stop_date = '2024-06-01 00:00:00'): #default start and stop date should be 1979 - 2025? #TODO
+        stop_date = '2026-01-01 00:00:00'):
     """modify the above input variables to configure and generate time series
     data for various GSI related statistics
         
@@ -77,15 +77,15 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
                             array_metric_types=array_metric_type,
                             select_sat_name=select_sat_name,
                             sat_name=sat_name)
-            # timeseries_data.build(all_channel_max=False, # set max or mean #TODO: uncomment this, it should be under make_plot most likely 
-            #                       all_channel_mean=False,
-            #                       by_channel=True) # other False #TODO remove these hardcodes
+            timeseries_data.build(all_channel_max=False, # set max or mean  
+                                  all_channel_mean=False,
+                                  by_channel=True) # other False 
 
             if make_plot:
                 timeseries_data.plot()
                 plt.suptitle(experiment_name)
                 #plt.show()
-                metric_string = array_metric_type.split('%')[1] #this won't always work if you give a specific sensor value #TODO
+                metric_string = array_metric_type.split('%')[1] #this won't always work if you give a specific sensor value 
                 plt.savefig(os.path.join(
                                 'results',
                                 f'gsi{metric_string}{experiment_name}.png'),
@@ -94,7 +94,7 @@ def run(make_plot=False, make_line_plot=True, select_array_metric_types=True,
 
             elif make_line_plot:
                 stat_label = 'bias_post_corr_GSIstage_1'
-                #stat_label = 'std_GSIstage_1' #TODO
+                #stat_label = 'std_GSIstage_1'
                 sensor_label = 'n15_amsua'
                 y_min = -0.5
                 y_max = 0.6
@@ -113,7 +113,7 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         select_sat_name=True, multi_stat=True, per_channel=True,
         experiment_list=[
                          'NASA_GEOSIT_GSISTATS',
-                         'scout_run_v1', #171
+                         'scout_run_v1',
                          'replay_observer_diagnostic_v1'
                      ],
         array_metrics_list=['amsua_std_%',
@@ -443,10 +443,9 @@ class GSIStatsTimeSeries(object):
                 
 
                 for i, channel in enumerate(row.array_index_values):
-                    if channel_list is not None and channel not in channel_list: #TODO: check this functionality
+                    if channel_list is not None and channel not in channel_list: 
                         continue 
 
-                    #value = np.nansum([np.nan if row.value[i] is None else row.value[i] for i in channel_indices if i < len(row.value)])#TODO - this is the line that needs to change
                     value = np.nan if row.value[i] is None else row.value[i]
 
                     # Check if stat_label exists in timestamp_dict
@@ -852,29 +851,6 @@ def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, out
         for sensor_label in sensorlabel_list:
             for channel_label in channel_list:
                 plt.figure(figsize=(16, 12), dpi=300)  # Create a new figure for each stat-sensor-channel combination
-
-                # # Loop through each experiment in the experiment list
-                # for i, experiment_name in enumerate(experiment_list):
-                #     # Access the corresponding GSIStatsTimeSeries object from the dictionary
-                #     timeseries_obj = timeseries_dict.get(experiment_name)
-
-                #     if timeseries_obj:
-                #         # Safely access the nested dictionary for time_valid and value
-                #         time_valid = timeseries_obj.timestamp_dict.get(stat_label, {}).get(sensor_label, [])
-                #         value = timeseries_obj.value_dict.get(stat_label, {}).get(sensor_label, [])
-                #         #TODO: update to handle channels?
-                #         # Check if data exists for the stat_label and sensor_label
-                #         if time_valid and value:
-                #             # Plot the data for this experiment
-                #             color = expt_colors[i] if expt_colors else None
-                #             experiment_label = experiment_name
-                #             if experiment_name in friendly_names_dict:
-                #                 experiment_label = friendly_names_dict[experiment_name]
-                #             plt.plot(time_valid, value, label=experiment_label, alpha=0.6, color=color) #set plot for line or bar for bar or scatter for scatter
-                #         else:
-                #             print(f"No data for {stat_label}, {sensor_label} in experiment: {experiment_name}")
-                #     else:
-                #         print(f"No data for experiment: {experiment_name}")
 
                 # Loop through each experiment in the experiment list
                 for i, experiment_name in enumerate(experiment_list):
