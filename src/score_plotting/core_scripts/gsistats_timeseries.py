@@ -114,19 +114,21 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         experiment_list=[
                          'NASA_GEOSIT_GSISTATS',
                          'scout_run_v1',
-                         'replay_observer_diagnostic_v1'
+                         #'replay_observer_diagnostic_v1'
                      ],
         array_metrics_list=['amsua_std_%',
                             'amsua_bias_post_corr_GSIstage_%',
                             #'amsua_nobs_used_%'
                         ],
-        sat_name = 'NOAA 15',
+        sensor_name = 'AMSUA',
+        sat_name = 'NOAA 18',
         channel_list = None, 
         start_date = '1999-01-01 00:00:00',
         stop_date = '2024-12-01 00:00:00',
         color_list = [['#E4002B', '#f2901f'], 
                       ['#003087', '#0085CA'],
-                      ['#46990f', '#c1e67c']],
+                      #['#46990f', '#c1e67c']
+                      ],
         stat_pair = ['std_GSIstage_1', 'bias_post_corr_GSIstage_1'],
         y_min = None, 
         y_max = None,
@@ -186,17 +188,17 @@ def run_line_plot(make_line_plot=True, select_array_metric_types=True,
         if per_channel:
             if multi_stat:
                 #mutli stat, each channel on their own plot
-                plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, output_directory, stat_pair, array_metrics_list, color_list, y_min, y_max)
+                plot_experiment_comparison_multi_stat_per_channel(experiment_timeseries, experiment_list, output_directory, stat_pair, array_metrics_list, sensor_name, sat_name, color_list, y_min, y_max)
             else:
                 #singular stat, each channel on their own plot
-                plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, output_directory, color_list, y_min, y_max)
+                plot_experiment_comparison_per_channel(experiment_timeseries, experiment_list, output_directory, sensor_name, sat_name, color_list, y_min, y_max)
         else:
             if multi_stat:
                 #multi stat, all channels same plot
-                plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, output_directory, stat_pair, array_metrics_list, color_list, y_min, y_max) 
+                plot_experiment_comparison_multi_stat_all_channel(experiment_timeseries, experiment_list, output_directory, stat_pair, array_metrics_list, sensor_name, sat_name, color_list, y_min, y_max) 
             else: 
                 #single stat, all channels same plot 
-                plot_experiment_comparison(experiment_timeseries, experiment_list, output_directory, channel_list, color_list, y_min, y_max) 
+                plot_experiment_comparison(experiment_timeseries, experiment_list, output_directory, channel_list, sensor_name, sat_name, color_list, y_min, y_max) 
 
     else:
         timeseries_data.print_init_time()
@@ -723,7 +725,7 @@ def make_line_plot_multi_expt(timeseries_dict, experiment_list):
     plt.show()
 
 #This function plots all channels on the same plot, but each stat and sensor combo gets it's own plot
-def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, channel_list, expt_colors=None, y_min=None, y_max=None):
+def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, channel_list, sensor_name, sat_name, expt_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for multiple stat and sensor combination, and save each plot.
     
@@ -748,29 +750,6 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
         # Loop through each sensor_label in the sensorlabel_list
         for sensor_label in sensorlabel_list:
             plt.figure(figsize=(16, 12), dpi=300)  # Create a new figure for each stat-sensor combination
-
-            # # Loop through each experiment in the experiment list
-            # for i, experiment_name in enumerate(experiment_list):
-            #     # Access the corresponding GSIStatsTimeSeries object from the dictionary
-            #     timeseries_obj = timeseries_dict.get(experiment_name)
-
-            #     if timeseries_obj:
-            #         # Safely access the nested dictionary for time_valid and value
-            #         time_valid = timeseries_obj.timestamp_dict.get(stat_label, {}).get(sensor_label, [])
-            #         value = timeseries_obj.value_dict.get(stat_label, {}).get(sensor_label, [])
-            #         #TODO: update to handle channels?
-            #         # Check if data exists for the stat_label and sensor_label
-            #         if time_valid and value:
-            #             # Plot the data for this experiment
-            #             color = expt_colors[i] if expt_colors else None
-            #             experiment_label = experiment_name
-            #             if experiment_name in friendly_names_dict:
-            #                 experiment_label = friendly_names_dict[experiment_name]
-            #             plt.plot(time_valid, value, label=experiment_label, alpha=0.6, color=color) #set plot for line or bar for bar or scatter for scatter
-            #         else:
-            #             print(f"No data for {stat_label}, {sensor_label} in experiment: {experiment_name}")
-            #     else:
-            #         print(f"No data for experiment: {experiment_name}")
 
             # Loop through each experiment in the experiment list
             for i, experiment_name in enumerate(experiment_list):
@@ -803,9 +782,9 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
             plt.xlabel('Time Valid', fontsize=18)
             plt.ylabel(f'{stat_label}', fontsize=18)
             if channel_list is None:
-                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments', fontsize=18)
+                plt.title(f'Comparison of {stat_label} and {sensor_label} for {sensor_name} {sat_name} across Experiments', fontsize=18)
             else:
-                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments for Channels {channel_list}', fontsize=18)
+                plt.title(f'Comparison of {stat_label} and {sensor_label} for {sensor_name} {sat_name} across Experiments for Channels {channel_list}', fontsize=18)
             plt.legend(fontsize=20)
 
             # Rotate x-axis labels for readability
@@ -823,7 +802,7 @@ def plot_experiment_comparison(timeseries_dict, experiment_list, output_dir, cha
             print(f"Plot saved: {plot_filepath}")
 
 #This function plots each channel, stat, sensor combo on it's own plot
-def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, output_dir, expt_colors=None, y_min=None, y_max=None):
+def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, output_dir, sensor_name, sat_name, expt_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for multiple stat and sensor combination, and save each plot.
     
@@ -887,7 +866,7 @@ def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, out
                 # Add labels and title for the plot
                 plt.xlabel('Time Valid', fontsize=18)
                 plt.ylabel(f'{stat_label}', fontsize=18)
-                plt.title(f'Comparison of {stat_label} and {sensor_label} across Experiments for Channel {channel_label}', fontsize=18)
+                plt.title(f'Comparison of {stat_label} and {sensor_label} for {sensor_name} {sat_name} across Experiments for Channel {channel_label}', fontsize=18)
                 plt.legend(fontsize=20)
 
                 # Rotate x-axis labels for readability
@@ -905,7 +884,7 @@ def plot_experiment_comparison_per_channel(timeseries_dict, experiment_list, out
                 print(f"Plot saved: {plot_filepath}")
 
 #This function plots stat and sensor combos on the same plot wihtout regard to separate channels (expects channels averaged and a list of which channels are included for title)
-def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, output_dir, channel_list, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
+def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, output_dir, channel_list, stat_pair, array_metrics_list, sensor_name, sat_name, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
 
@@ -977,7 +956,7 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
         # Add labels and title for the plot
         plt.xlabel('Time Valid', fontsize=18)
         plt.ylabel(f'Statistic Values', fontsize=18)
-        plt.title(f'Comparison of NOAA and NASA Experiments for Channel {channel_list}', fontsize=18)
+        plt.title(f'{stat_pair[0]} and {stat_pair[1]} for {sensor_name} {sat_name} and Channel(s) {channel_list}', fontsize=18)
         plt.legend(fontsize=20)
 
         #Rotate x-axis labels for readability
@@ -995,7 +974,7 @@ def plot_experiment_comparison_multi_stat(timeseries_dict, experiment_list, outp
         print(f"Plot saved: {plot_filepath}")
 
 #This function plots stat, sensor, and channels all on the same plot 
-def plot_experiment_comparison_multi_stat_all_channel(timeseries_dict, experiment_list, output_dir, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
+def plot_experiment_comparison_multi_stat_all_channel(timeseries_dict, experiment_list, output_dir, stat_pair, array_metrics_list, sensor_name, sat_name, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
 
@@ -1074,7 +1053,7 @@ def plot_experiment_comparison_multi_stat_all_channel(timeseries_dict, experimen
         # Add labels and title for the plot
         plt.xlabel('Time Valid', fontsize=18)
         plt.ylabel(f'Statistic Values', fontsize=18)
-        plt.title(f'Comparison of NOAA and NASA Experiments for Channel {channel_list}', fontsize=18)
+        plt.title(f'{stat_pair[0]} and {stat_pair[1]} for {sensor_name} {sat_name} and Channel(s) {channel_list}', fontsize=18)
         plt.legend(fontsize=20)
 
         #Rotate x-axis labels for readability
@@ -1092,7 +1071,7 @@ def plot_experiment_comparison_multi_stat_all_channel(timeseries_dict, experimen
         print(f"Plot saved: {plot_filepath}")
 
 #This function plots stat and sensor combos on the same plot but each channel receives it's own plot
-def plot_experiment_comparison_multi_stat_per_channel(timeseries_dict, experiment_list, output_dir, stat_pair, array_metrics_list, line_colors=None, y_min=None, y_max=None):
+def plot_experiment_comparison_multi_stat_per_channel(timeseries_dict, experiment_list, output_dir, stat_pair, array_metrics_list, sensor_name, sat_name, line_colors=None, y_min=None, y_max=None):
     """
     Plot time series for multiple experiments for each stat and sensor combination, and save each plot.
 
@@ -1171,7 +1150,7 @@ def plot_experiment_comparison_multi_stat_per_channel(timeseries_dict, experimen
             # Add labels and title for the plot
             plt.xlabel('Time Valid', fontsize=18)
             plt.ylabel(f'Statistic Values', fontsize=18)
-            plt.title(f'Comparison of NOAA and NASA Experiments for Channel {channel}', fontsize=18)
+            plt.title(f'{stat_pair[0]} and {stat_pair[1]} for {sensor_name} {sat_name} Channel {channel}', fontsize=18)
             plt.legend(fontsize=20)
 
             #Rotate x-axis labels for readability
