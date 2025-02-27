@@ -77,7 +77,7 @@ class GSIStatsTimeSeries(object):
     
         if self.select_array_metric_types:
             request_dict['params']['filters']['array_metric_types'] = {
-                'name': {'like': self.array_metric_types}
+                'name': {'exact': self.array_metric_types}
             }
 
         if self.select_sat_name:
