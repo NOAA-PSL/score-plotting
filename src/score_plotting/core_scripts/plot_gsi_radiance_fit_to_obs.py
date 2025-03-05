@@ -22,18 +22,10 @@ HOURS_PER_DAY = 24. # hours
 DA_CYCLE = 6. # hours
 DAYS_TO_SMOOTH = 8. # days
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description='script to create GSI analysis timeseries figures for '
-                    'radiance error monitoring')
-    parser.add_argument('figure_output_path', type=str,
-                        help='path to where figures will be saved.')
-    args = parser.parse_args()
-
-    return args
+import argparse
 
 def config():
-    args = parse_arguments()    
+    args = parse_arguments() 
     config_dict = {
         'config_path':
             os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
@@ -68,10 +60,42 @@ def config():
                          "sqrt_bias_GSIstage_1": "RMSE"}
                          
     return(config_dict, friendly_names_dict)
+    
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Script to create GSI analysis timeseries figures for '
+                    'radiance error monitoring')
+    
+    # Make figure_output_path optional (defaults to $HOME)
+    parser.add_argument('figure_output_path', type=str, nargs='?',
+                        default=pathlib.Path.home(),
+                        help='Path to where figures will be saved')
+    
+    # Add an argument for interactive plotting
+    parser.add_argument('--interactive', action='store_true',
+                        help='Enable interactive plotting. If specified, plots will be displayed interactively.')
+                        
+    # Add optional argument for satellite
+    parser.add_argument('--satellite', type=str, default='all',
+                        help='Satellite name')
+    
+    # Add optional argument for channel
+    parser.add_argument('--channel', type=int, default='all',
+                            help='Channel number (e.g., 1, 2, 3, ...)')
+    
+    # Add optional argument for sensor
+    parser.add_argument('--sensor', type=str, default='all',
+                        help='Sensor name (e.g., atms, amsua)')
+    
+    args = parser.parse_args()
+
+    return args
 
 def get_data_frame(experiment_list, sensor_list,
                    start_date='1979-01-01 00:00:00',
-                   stop_date='2026-01-01 00:00:00'):
+                   stop_date='2026-01-01 00:00:00',
+                   select_sat_name=False,
+                   sat_name=None):
         
     array_metric_list = list()
     for sensor in sensor_list:
@@ -88,8 +112,8 @@ def get_data_frame(experiment_list, sensor_list,
                                array_metric_list,
                                start_date=start_date,
                                stop_date=stop_date,
-                               select_sat_name=False,
-                               sat_name=None)
+                               select_sat_name=select_sat_name,
+                               sat_name=sat_name)
 
 class GSIRadianceFit2ObsFig(object):
     """
@@ -114,7 +138,7 @@ class GSIRadianceFit2ObsFig(object):
                                              self.config_dict['start_date'],
                                              self.config_dict['stop_date'])
     
-    def build_timeseries(self):
+    def build_timeseries(self, interactive_figure=False):
         for sensor, channel_list in self.channel_dict.items():
             if sensor in self.config_dict['sensor_list']:
                 experiment_timeseries_datetime_init=None
@@ -152,11 +176,13 @@ class GSIRadianceFit2ObsFig(object):
                 self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
                 self.make_figures(
                     sensor,
-                    init_datetime=experiment_timeseries_datetime_init)
+                    init_datetime=experiment_timeseries_datetime_init,
+                    interactive=interactive_figure)
                         
     def make_figures(self, sensor, ncols=3, init_datetime=None,
                      alpha_foreground=0.9,
-                     alpha_background=0.25):
+                     alpha_background=0.25,
+                     interactive=False):
         output_dir = os.path.join(self.config_dict['output_path'], f"{sensor}")
         window_size = int(DAYS_TO_SMOOTH * (HOURS_PER_DAY / DA_CYCLE))
         # Check if the directory exists, and create it if it doesn't
@@ -522,16 +548,35 @@ class GSIRadianceFit2ObsFig(object):
                 
                 for row, sat_sensor in enumerate(sorted(sat_set)):
                     # set ylim, ticks
-                    axes[row, 1].set_yticks(np.arange(0, 3.*max_yerr + 0.1, 0.1), minor=True)
-                    axes[row, 0].set_yticks(np.arange(-1.5*max_yerr, 1.5*max_yerr + 0.1, 0.1), minor=True)
-                
-                    axes[row, 0].set_yticks(np.arange(np.around(-1.5*max_yerr - 1), np.around(1.5*max_yerr + 2), 0.5))
-                    axes[row, 1].set_yticks(np.arange(0, np.around(3.*max_yerr + 2), 0.5))
+                    axes[row, 0].set_yticks(
+                        np.arange(np.around(-1.5 * max_yerr - 0.2, decimals=1),
+                                  1.5 * max_yerr + 0.2,
+                                  0.1),
+                        minor=True
+                    )
+                    
+                    axes[row, 1].set_yticks(
+                        np.arange(0, 3. * max_yerr + 0.1, 0.1),
+                        minor=True
+                    )
+
+                    axes[row, 0].set_yticks(
+                        np.arange(np.around(-1.5 * max_yerr - 1),
+                                  1.5*max_yerr + 1,
+                                  0.5)
+                    )
+                    
+                    axes[row, 1].set_yticks(
+                        np.arange(0, 3. * max_yerr + 1, 0.5)
+                    )
                     
                     axes[row, 0].set_ylim(-1.5*max_yerr, 1.5*max_yerr)
                     axes[row, 1].set_ylim(0, 3.*max_yerr)
                 
-                plt.savefig(os.path.join(output_dir, 
+                if interactive:
+                    plt.show()
+                else:
+                    plt.savefig(os.path.join(output_dir, 
                                   f'gsi_radiance_omb_{sensor}_ch{channel_num}.png'),
                             dpi=300)
                 plt.close()
@@ -552,6 +597,8 @@ def run_avhrr(sensor_list = ['avhrr2', 'avhrr3']):
     prun(sensor_list=sensor_list)
 
 def prun(sensor_list=None):
+    args = parse_arguments()
+    
     # Initialize MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -560,10 +607,16 @@ def prun(sensor_list=None):
     # Load global configurations and friendly names
     global_config_dict, global_friendly_names_dict = config()
 
+    if args.sensor != 'all':
+        sensor_list = [args.sensor]
+    
     if sensor_list==None:
         sensor_list = list()
         for sensor in global_config_dict['sensor_list']:
             sensor_list.append(sensor)
+            
+    if args.satellite != 'all':
+        select_sat_name = True
 
     # Rank 0 prepares the data
     if rank == 0:
@@ -571,8 +624,9 @@ def prun(sensor_list=None):
             global_config_dict['experiment_list'],
             sensor_list,
             start_date=global_config_dict['start_date'],
-            stop_date=global_config_dict['stop_date']
-        )
+            stop_date=global_config_dict['stop_date'],
+            select_sat_name = select_sat_name,
+            sat_name=args.satellite)
 
         # Split the data by sensor (one part per sensor)
         data_frame_parts_dict = dict()
@@ -619,10 +673,13 @@ def prun(sensor_list=None):
                 data_frame=data_frame,
                 input_data_frame=True
             )
+            if args.channel != 'all':
+                experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
-            experiment_metrics_timeseries_data.build_timeseries()
+            experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive)
 
 def prun0(sensor_list=None):
+    args = parser.parse_args()
     # Initialize MPI communicator
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()  # Get the rank of the current process
@@ -631,16 +688,24 @@ def prun0(sensor_list=None):
     # Load global configurations and friendly names
     global_config_dict, global_friendly_names_dict = config()
     
+    if args.sensor != 'all':
+        sensor_list = [args.sensor]
+    
     if sensor_list==None:
         sensor_list = list()
         for sensor in global_config_dict['sensor_list']:
             sensor_list.append(sensor)
+            
+    if args.satellite != 'all':
+        select_sat_name = True
     
     if rank == 0:
         global_data_frame = get_data_frame(global_config_dict['experiment_list'],
                                            sensor_list,
                                            start_date=global_config_dict['start_date'],
-                                           stop_date=global_config_dict['stop_date'])
+                                           stop_date=global_config_dict['stop_date'],
+                                           select_sat_name = select_sat_name,
+                                           sat_name=args.satellite)
     else:
         global_data_frame = None
     
@@ -666,13 +731,15 @@ def prun0(sensor_list=None):
                 global_data_frame['metric_instrument_name']==sensor],
             input_data_frame=True
         )
+        if args.channel != 'all':
+            experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
         
         # Set the current sensor for the experiment
         experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
         #print(f'{sensor}', rank)
         
         # Build time series data for the current sensor
-        experiment_metrics_timeseries_data.build_timeseries()
+        experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive)
 
 def main():
     """

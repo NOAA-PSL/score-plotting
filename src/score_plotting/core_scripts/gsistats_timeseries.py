@@ -65,7 +65,7 @@ def get_data_frame(experiment_list,
 
     if select_sat_name:
         request_dict['params']['filters']['sat_meta'] = {
-            'sat_name': {'like': sat_name}
+            'sat_name': {'exact': sat_name}
         }
 
     db_action_response = score_db_base.handle_request(request_dict)    
@@ -130,7 +130,7 @@ class GSIStatsTimeSeries(object):
                                             set(self.data_frame['metric_name']))
         
         self.timestamp_dict = dict()
-        self.timelabel_dict = dict()
+        #self.timelabel_dict = dict()
         self.value_dict = dict()
         for i, stat_name in enumerate(self.unique_stat_list[0]):
             for j, gsi_stage in enumerate(self.unique_stat_list[1]):
