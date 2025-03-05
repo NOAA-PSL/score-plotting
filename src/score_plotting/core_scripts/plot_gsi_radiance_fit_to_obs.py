@@ -47,7 +47,7 @@ def config():
                          ],
         'color_list': ['#CFB87C', '#0085CA', '#E4002B', 'black'],
         #'ls_list': [':', '-.', '--', '-'],
-        'ls_list': ['-', '-.', '-', '-'],
+        'ls_list': ['-', '-', '-', '-'],
         'lw_list': [2.5, 2.0, 1.5, 1.0],
         'sensor_list': get_instrument_channels().keys(),#['amsua'],
         'start_date': '1979-01-01 00:00:00',
@@ -386,9 +386,9 @@ class GSIRadianceFit2ObsFig(object):
                                             if yerr2:
                                                 yerrs2.append(yerr)
                                             else:
-                                                yerrs2.append(0)
+                                                yerrs2.append(np.nan)
                                         else:
-                                            yerrs2.append(0)
+                                            yerrs2.append(np.nan)
                                             
                                         if rmse_timestamp in use_timestamps:
                                             use_time_idx = use_timestamps.index(rmse_timestamp)
@@ -403,7 +403,7 @@ class GSIRadianceFit2ObsFig(object):
                                 
                                     yerrs_plot = np.sqrt(np.array([np.nan if x is None else float(x) for x in yerrs2]))
                                     use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
-                                    max_yerr = np.max(yerrs_plot, initial=max_yerr)
+                                    max_yerr = np.max(np.nan_to_num(yerrs_plot), initial=max_yerr)
                                     rmse_values_plot = np.ma.masked_where(
                                         use_flags_plot < 1,
                                         np.array([np.nan if x is None else float(x) for x in rmse_values])
@@ -679,9 +679,9 @@ def main():
     """
     #run_avhrr()
     #run_tovs()
-    #run_microwave_sounders()
+    run_microwave_sounders()
     #run_atms()
-    prun()
+    #prun()
 
 if __name__ == "__main__":
     main()
