@@ -12,7 +12,7 @@ def extract_unique_stats(strings):
         parts = s.split('_')
         
         # Add the second and last elements to their respective sets
-        if len(parts) > 1 and parts[-1] != 'None':  # Ensure there are at least 2 parts, 
+        if len(parts) > 1: #and parts[-1] != 'None':  # Ensure there are at least 2 parts, 
             second_position_set.add('_'.join(parts[1:-2]))
             last_position_set.add(parts[-1])
     
@@ -25,8 +25,75 @@ def extract_unique_stats(strings):
     
     return unique_positions
 
+def get_data_frame(experiment_list,
+                   array_metric_list,
+                   start_date='1979-01-01 00:00:00',
+                   stop_date='2026-01-01 00:00:00',
+                   select_sat_name=False,
+                   sat_name=None):
+    """request from the score-db application experiment data
+    Database requests are submitted via score-db with a request dictionary
+    """
+    request_dict = {
+        'db_request_name': 'expt_array_metrics',
+        'method': 'GET',
+        'params': {'filters':
+                      {'experiment':{
+                          'experiment_name':
+                              {'exact':
+                                 experiment_list}
+                             },
+                       'regions': {
+                                        'name': {
+                                            'exact': ['global']
+                                        },
+                                    },
+
+                       'time_valid': {
+                                        'from': start_date,
+                                        'to': stop_date,
+                                    },
+                                },
+                   'ordering': [ {'name': 'time_valid', 'order_by': 'asc'}]
+               }
+    
+    }
+
+    request_dict['params']['filters']['array_metric_types'] = {
+        'name': {'exact': array_metric_list}
+    }
+
+    if select_sat_name:
+        request_dict['params']['filters']['sat_meta'] = {
+            'sat_name': {'like': sat_name}
+        }
+
+    db_action_response = score_db_base.handle_request(request_dict)    
+    data_frame = db_action_response.details['records']
+    
+    # sort by timestamp, created at
+    data_frame.sort_values(by=['expt_name',
+                               'metric_name',
+                               'sat_short_name',
+                               'time_valid',
+                               'created_at'], 
+                               inplace=True)
+
+    # remove duplicate data
+    data_frame.drop_duplicates(subset=['expt_name',
+                                       'metric_name',
+                                       'sat_short_name',
+                                       'time_valid'], 
+                               keep='last', inplace=True)
+                               
+    return data_frame
+
 class GSIStatsTimeSeries(object):
-    def __init__(self, start_date, stop_date,
+    def __init__(self,
+                 start_date,
+                 stop_date,
+                 data_frame=None,
+                 input_data_frame=False,
                  experiment_name = 'scout_run_v1',#
                                    #'scout_runs_gsi3dvar_1979stream',#
                 select_array_metric_types = True,
@@ -44,60 +111,19 @@ class GSIStatsTimeSeries(object):
         self.select_sat_name = select_sat_name
         self.sat_name = sat_name
         self.experiment_id = experiment_id
-        self.get_data_frame(start_date, stop_date)
-
-    def get_data_frame(self, start_date, stop_date):
-        """request from the score-db application experiment data
-        Database requests are submitted via score-db with a request dictionary
-        """
-        request_dict = {
-            'db_request_name': 'expt_array_metrics',
-            'method': 'GET',
-            'params': {'filters':
-                          {'experiment':{
-                              'experiment_name':
-                                  {'exact':
-                                     self.experiment_name}
-                                 },
-                           'regions': {
-                                            'name': {
-                                                'exact': ['global']
-                                            },
-                                        },
-
-                           'time_valid': {
-                                            'from': start_date,
-                                            'to': stop_date,
-                                        },
-                                    },
-                       'ordering': [ {'name': 'time_valid', 'order_by': 'asc'}]
-                   }
+        if input_data_frame and type(self.array_metric_types) == str:
+            self.data_frame = data_frame[(
+                data_frame['expt_name'] == self.experiment_name) &            
+                (data_frame['metric_name'] == self.array_metric_types)]
         
-        }
-    
-        if self.select_array_metric_types:
-            request_dict['params']['filters']['array_metric_types'] = {
-                'name': {'exact': self.array_metric_types}
-            }
-
-        if self.select_sat_name:
-            request_dict['params']['filters']['sat_meta'] = {
-                'sat_name': {'exact': self.sat_name}
-            }
-
-        db_action_response = score_db_base.handle_request(request_dict)    
-        self.data_frame = db_action_response.details['records']
-        
-        # sort by timestamp, created at
-        self.data_frame.sort_values(by=['metric_instrument_name',
-                                        'sat_short_name',
-                                        'time_valid',
-                                        'created_at'], 
-                                    inplace=True)
-    
-        # remove duplicate data
-        self.data_frame.drop_duplicates(subset=['metric_name', 'time_valid'], 
-                                        keep='last', inplace=True)
+        else:
+            self.data_frame = get_data_frame(
+                [self.experiment_name],
+                [self.array_metric_types],
+                start_date=start_date,
+                stop_date=stop_date,
+                select_sat_name=self.select_sat_name,
+                sat_name=self.sat_name)
         
     def build(self, all_channel_max=False, all_channel_mean=False, by_channel=True):
         self.unique_stat_list = extract_unique_stats(
@@ -109,7 +135,7 @@ class GSIStatsTimeSeries(object):
         for i, stat_name in enumerate(self.unique_stat_list[0]):
             for j, gsi_stage in enumerate(self.unique_stat_list[1]):
                 self.timestamp_dict[f'{stat_name}_GSIstage_{gsi_stage}'] = dict()
-                self.timelabel_dict[f'{stat_name}_GSIstage_{gsi_stage}'] = dict()
+                #self.timelabel_dict[f'{stat_name}_GSIstage_{gsi_stage}'] = dict()
                 self.value_dict[f'{stat_name}_GSIstage_{gsi_stage}'] = dict()
                 
         for key in self.value_dict.keys():
@@ -119,7 +145,7 @@ class GSIStatsTimeSeries(object):
                     sensor_label = f'{sat_short_name}_{instrument_name}'
                     
                     self.timestamp_dict[key][sensor_label] = list()
-                    self.timelabel_dict[key][sensor_label] = list()
+                    #self.timelabel_dict[key][sensor_label] = list()
                     self.value_dict[key][sensor_label] = list()
         
         self.sensorlabel_dict = dict()
@@ -127,7 +153,7 @@ class GSIStatsTimeSeries(object):
         for row in self.data_frame.itertuples():
             metric_name_parts = row.metric_name.split('_')
 
-            if metric_name_parts[0] == row.metric_instrument_name and metric_name_parts[-1] != 'None':
+            if metric_name_parts[0] == row.metric_instrument_name and row.expt_name == self.experiment_name:
                 stat_name = '_'.join(metric_name_parts[1:-2])
                 gsi_stage = metric_name_parts[-1]
                 
@@ -135,9 +161,11 @@ class GSIStatsTimeSeries(object):
                 
                 sensor_label = f'{row.sat_short_name}_{row.metric_instrument_name}'
                 timestamp = row.time_valid#.timestamp()
-                time_label = '%02d-%02d-%04d' % (row.time_valid.month,
-                                             row.time_valid.day,
-                                             row.time_valid.year,)
+                
+                if False:
+                    time_label = '%02d-%02d-%04d' % (row.time_valid.month,
+                                                     row.time_valid.day,
+                                                     row.time_valid.year,)
                 
                 if all_channel_mean and all_channel_max:
                     warnings.warn("got both channel mean and max, returning "
@@ -158,7 +186,7 @@ class GSIStatsTimeSeries(object):
 
                 #print(gsi_stage, stat_name, sensor_label, time_label, value)
                 self.timestamp_dict[stat_label][sensor_label].append(timestamp)
-                self.timelabel_dict[stat_label][sensor_label].append(time_label)
+                #self.timelabel_dict[stat_label][sensor_label].append(time_label)
                 self.value_dict[stat_label][sensor_label].append(value)
                 
                 if not sensor_label in self.sensorlabel_dict.keys():
