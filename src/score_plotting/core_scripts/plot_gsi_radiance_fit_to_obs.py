@@ -80,7 +80,7 @@ def parse_arguments():
                         help='Satellite name')
     
     # Add optional argument for channel
-    parser.add_argument('--channel', type=int, default='all',
+    parser.add_argument('--channel', type=int, default=9999,
                             help='Channel number (e.g., 1, 2, 3, ...)')
     
     # Add optional argument for sensor
@@ -204,11 +204,11 @@ class GSIRadianceFit2ObsFig(object):
                 fig, axes = plt.subplots(len(sat_set), ncols, sharex=True,sharey=False,
                                          squeeze=False,
                                          figsize=(2*ncols*3.74, len(sat_set)*4.53))
-                title_str0 = f"GSI radiance data analysis fit to observations (O-B) [metrics downloaded from RDB {self.db_name}"
+                title_str0 = f"GSI radiance data analysis fit to observations (O-B) [metrics downloaded from {self.db_name}"
                 
                 if init_datetime:
                     init_ctime = init_datetime.ctime()
-                    title_str1 = f" {init_ctime}]"
+                    title_str1 = f" {init_ctime} UTC]"
                 
                 else:
                     title_str1 = "]"
@@ -638,6 +638,8 @@ def prun(sensor_list=None):
             
     if args.satellite != 'all':
         select_sat_name = True
+    else:
+        select_sat_name = False
 
     # Rank 0 prepares the data
     if rank == 0:
@@ -694,7 +696,7 @@ def prun(sensor_list=None):
                 data_frame=data_frame,
                 input_data_frame=True
             )
-            if args.channel != 'all':
+            if args.channel != 9999:
                 experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
             experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive)
@@ -752,7 +754,7 @@ def prun0(sensor_list=None):
                 global_data_frame['metric_instrument_name']==sensor],
             input_data_frame=True
         )
-        if args.channel != 'all':
+        if args.channel != 9999:
             experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
         
         # Set the current sensor for the experiment
