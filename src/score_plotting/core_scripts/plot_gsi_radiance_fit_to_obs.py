@@ -40,7 +40,7 @@ def config():
         'color_list': ['#CFB87C', '#0085CA', '#E4002B', 'black'],
         #'ls_list': [':', '-.', '--', '-'],
         'ls_list': ['-', '-', '-', '-'],
-        'lw_list': [2.5, 2.0, 1.5, 1.0],
+        'lw_list': [4.0, 3.0, 2.0, 1.0],
         'sensor_list': get_instrument_channels().keys(),#['amsua'],
         'start_date': '1979-01-01 00:00:00',
         'stop_date': '2026-01-01 00:00:00',
@@ -181,10 +181,11 @@ class GSIRadianceFit2ObsFig(object):
                         
     def make_figures(self, sensor, ncols=3, init_datetime=None,
                      alpha_foreground=0.9,
-                     alpha_background=0.25,
+                     alpha_background=0.3,
                      interactive=False):
         output_dir = os.path.join(self.config_dict['output_path'], f"{sensor}")
         window_size = int(DAYS_TO_SMOOTH * (HOURS_PER_DAY / DA_CYCLE))
+        vbar_width = pd.Timedelta(hours=DA_CYCLE)
         # Check if the directory exists, and create it if it doesn't
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -261,6 +262,7 @@ class GSIRadianceFit2ObsFig(object):
                                         f'{sensor}_std_GSIstage_1'].value_dict[
                                             'std_GSIstage_1'][sat_sensor]
                                             
+                                    
                                     nobs_used_timestamps = timeseries_dict[
                                         f'{sensor}_nobs_used_GSIstage_1'
                                         ].timestamp_dict['nobs_used_GSIstage_1'
@@ -269,6 +271,7 @@ class GSIRadianceFit2ObsFig(object):
                                         f'{sensor}_nobs_used_GSIstage_1'
                                         ].value_dict[f'nobs_used_GSIstage_1'
                                             ][sat_sensor]
+                                    
                                     use_timestamps = timeseries_dict[
                                         f'{sensor}_use_GSIstage_None'].timestamp_dict[
                                             'use_GSIstage_None'][sat_sensor]
@@ -291,6 +294,7 @@ class GSIRadianceFit2ObsFig(object):
                                         else:
                                             yerrs.append(np.nan)
                                         
+
                                         if bias_timestamp in nobs_used_timestamps:
                                             nobs_used_time_idx = nobs_used_timestamps.index(bias_timestamp)
                                             nobs_used_channel = np.array(nobs_used_values)[nobs_used_time_idx, channel_idx]
@@ -314,26 +318,38 @@ class GSIRadianceFit2ObsFig(object):
                                             use_flags.append(np.nan)
                                             
                                     use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
-                                    mean_values_plot = np.ma.masked_where(
-                                        use_flags_plot < 1,
-                                        np.array([np.nan if x is None else float(x) for x in bias_values])
-                                    )
-                                    
-                                    yerrs_plot = np.ma.masked_where(
-                                        use_flags_plot < 1,
-                                        np.array([np.nan if x is None else float(x) for x in yerrs])
-                                    )
+                                    mean_values_plot = np.array([np.nan if x is None else float(x) for x in bias_values])
+                                    yerrs_plot = np.array([np.nan if x is None else float(x) for x in yerrs])
+                                    nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
+                                    standard_errs = np.array(yerrs_plot) / np.sqrt(nobs_used_plot)
+
                                     mean_values_smooth = pd.Series(
                                         mean_values_plot,
-                                        index=bias_timestamps)
-                                    #nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
-                                    #standard_errs = np.array(yerrs_plot) / np.sqrt(nobs_used_plot)
-                                        
+                                        index=bias_timestamps).rolling(
+                                            window=window_size,
+                                            center=True,
+                                            win_type='triang').mean()
+                                    
+                                    standard_errs_times_2 = 2.*standard_errs
+                                    yerr_bot = mean_values_plot - standard_errs
+                                    
+                                    use_flags_plot_mask = np.ma.masked_where(
+                                        use_flags_plot < 1, 30.*use_flags_plot)
+                                    
                                     axes[row, 0].bar(
                                         bias_timestamps,
-                                        2.*yerrs_plot,
-                                        width=pd.Timedelta(hours=DA_CYCLE),
-                                        bottom=mean_values_plot - yerrs_plot,
+                                        use_flags_plot_mask,
+                                        width=vbar_width,
+                                        bottom=-15,
+                                        color=self.config_dict['color_list'][experiment_idx],
+                                        alpha=0.5*alpha_background
+                                    )
+                                    
+                                    axes[row, 0].bar(
+                                        bias_timestamps,
+                                        standard_errs_times_2,
+                                        width=vbar_width,
+                                        bottom=yerr_bot,
                                         color=self.config_dict['color_list'][experiment_idx],
                                         alpha=alpha_background
                                     )
@@ -359,10 +375,7 @@ class GSIRadianceFit2ObsFig(object):
                                     )
                                     axes[row, 0].plot(
                                         bias_timestamps,
-                                        mean_values_smooth.rolling(
-                                            window=window_size,
-                                            center=True,
-                                            win_type='triang').mean(),
+                                        mean_values_smooth,
                                         marker='none',
                                         color=self.config_dict['color_list'][experiment_idx],
                                         alpha=alpha_foreground,
@@ -430,12 +443,15 @@ class GSIRadianceFit2ObsFig(object):
                                     yerrs_plot = np.sqrt(np.array([np.nan if x is None else float(x) for x in yerrs2]))
                                     use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
                                     max_yerr = np.max(np.nan_to_num(yerrs_plot), initial=max_yerr)
-                                    rmse_values_plot = np.ma.masked_where(
-                                        use_flags_plot < 1,
-                                        np.array([np.nan if x is None else float(x) for x in rmse_values])
-                                    )
+                                    rmse_values_plot = np.array([np.nan if x is None else float(x) for x in rmse_values])
                                     rmse_values_smooth = pd.Series(rmse_values_plot,
-                                                            index=rmse_timestamps)
+                                                            index=rmse_timestamps).rolling(
+                                                                window=window_size,
+                                                                center=True,
+                                                                win_type='triang'
+                                                                ).mean()
+                                    use_flags_plot_mask = np.ma.masked_where(
+                                        use_flags_plot < 1, 30.*use_flags_plot)
                                 
                                     '''
                                     axes[row, 1].bar(
@@ -447,6 +463,15 @@ class GSIRadianceFit2ObsFig(object):
                                         alpha=alpha_background
                                     )
                                     '''
+                                    
+                                    axes[row, 1].bar(
+                                        rmse_timestamps,
+                                        use_flags_plot_mask,
+                                        width=vbar_width,
+                                        bottom=0,
+                                        color=self.config_dict['color_list'][experiment_idx],
+                                        alpha=0.5*alpha_background
+                                    )
                                     
                                     axes[row, 1].plot(
                                         rmse_timestamps,
@@ -463,11 +488,7 @@ class GSIRadianceFit2ObsFig(object):
                                     )
                                     axes[row, 1].plot(
                                         rmse_timestamps,
-                                        rmse_values_smooth.rolling(
-                                            window=window_size,
-                                            center=True,
-                                            win_type='triang'
-                                        ).mean(),
+                                        rmse_values_smooth,
                                         marker='none',
                                         color=self.config_dict['color_list'][experiment_idx],
                                         alpha=alpha_foreground,
@@ -508,7 +529,7 @@ class GSIRadianceFit2ObsFig(object):
                                     nobs_tossed_plot = np.array([np.nan if x is None else float(x) for x in nobs_tossed_values])
                                     nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
                                     
-                                    rejection_rate = nobs_tossed_plot / (
+                                    rejection_percent = (100.*nobs_tossed_plot) / (
                                         nobs_used_plot + nobs_tossed_plot)
                                         
                                     axes[row, 2].bar(
@@ -522,7 +543,7 @@ class GSIRadianceFit2ObsFig(object):
                                 
                                     rejection_ratio_ax.plot(
                                                 nobs_tossed_timestamps,
-                                                100.*rejection_rate,
+                                                rejection_percent,
                                                 marker='none',
                                                 color=self.config_dict['color_list'][experiment_idx],
                                                 alpha=alpha_foreground,
@@ -581,7 +602,7 @@ class GSIRadianceFit2ObsFig(object):
                             dpi=300)
                 plt.close()
 
-def run_microwave_sounders(sensor_list=['amsua', 'amsub', 'atms', 'ssmis']):
+def run_microwave_sounders(sensor_list=['amsua', 'amsub', 'atms', 'ssmi', 'ssmis']):
     prun(sensor_list=sensor_list)
 
 def run_atms(sensor_list=['atms']):
