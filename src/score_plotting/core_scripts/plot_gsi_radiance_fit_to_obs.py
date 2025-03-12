@@ -32,18 +32,18 @@ def config():
                          'style_lib'),
         'config_file': ['full_3x3pg.mplstyle'],
         'output_path': args.figure_output_path,
-        'experiment_list': ['GDAS',
+        'experiment_list': ['NASA_GEOSIT_GSISTATS',
+                            'GDAS',
                             'replay_observer_diagnostic_v1',
-                            'NASA_GEOSIT_GSISTATS',
                             'scout_run_v1'
                          ],
-        'color_list': ['#CFB87C', '#0085CA', '#E4002B', 'black'],
+        'color_list': ['#E4002B', '#CFB87C','#0085CA', 'black'],
         #'ls_list': [':', '-.', '--', '-'],
         'ls_list': ['-', '-', '-', '-'],
         'lw_list': [4.0, 3.0, 2.0, 1.0],
         'sensor_list': get_instrument_channels().keys(),#['amsua'],
-        'start_date': '1979-01-01 00:00:00',
-        'stop_date': '2026-01-01 00:00:00',
+        'start_date': '2018-01-01 00:00:00',
+        'stop_date': '2022-01-01 00:00:00',
     }
     
     '''
@@ -86,6 +86,9 @@ def parse_arguments():
     # Add optional argument for sensor
     parser.add_argument('--sensor', type=str, default='all',
                         help='Sensor name (e.g., atms, amsua)')
+                        
+    parser.add_argument('--gsi_stage', type=int, default=1,
+                        help='GSI analysis iteration')
     
     args = parser.parse_args()
 
@@ -95,16 +98,18 @@ def get_data_frame(experiment_list, sensor_list,
                    start_date='1979-01-01 00:00:00',
                    stop_date='2026-01-01 00:00:00',
                    select_sat_name=False,
-                   sat_name=None):
+                   sat_name=None,
+                   gsi_it=1):
         
+    gsi_it = int(gsi_it)
     array_metric_list = list()
     for sensor in sensor_list:
-        array_metric_list.append(f'{sensor}_bias_post_corr_GSIstage_1')
-        array_metric_list.append(f'{sensor}_std_GSIstage_1')
-        array_metric_list.append(f'{sensor}_variance_GSIstage_1')
-        array_metric_list.append(f'{sensor}_sqrt_bias_GSIstage_1')
-        array_metric_list.append(f'{sensor}_nobs_used_GSIstage_1')
-        array_metric_list.append(f'{sensor}_nobs_tossed_GSIstage_1')
+        array_metric_list.append(f'{sensor}_bias_post_corr_GSIstage_{gsi_it}')
+        array_metric_list.append(f'{sensor}_std_GSIstage_{gsi_it}')
+        array_metric_list.append(f'{sensor}_variance_GSIstage_{gsi_it}')
+        array_metric_list.append(f'{sensor}_sqrt_bias_GSIstage_{gsi_it}')
+        array_metric_list.append(f'{sensor}_nobs_used_GSIstage_{gsi_it}')
+        array_metric_list.append(f'{sensor}_nobs_tossed_GSIstage_{gsi_it}')
         array_metric_list.append(f'{sensor}_use_GSIstage_None')
         
     return gsistats_timeseries.get_data_frame(
@@ -118,9 +123,11 @@ def get_data_frame(experiment_list, sensor_list,
 class GSIRadianceFit2ObsFig(object):
     """
     """
-    def __init__(self, data_frame=None, input_data_frame=False):
+    def __init__(self, data_frame=None, input_data_frame=False,
+                 gsi_it=1):
         """
         """
+        self.gsi_it = int(gsi_it)
         self.config_dict, self.friendly_names_dict = config()
         self.channel_dict = get_instrument_channels()
         self.experiment_list = self.config_dict['experiment_list']
@@ -136,18 +143,19 @@ class GSIRadianceFit2ObsFig(object):
         else:
             self.data_frame = get_data_frame(self.experiment_list,
                                              self.config_dict['start_date'],
-                                             self.config_dict['stop_date'])
+                                             self.config_dict['stop_date'],
+                                             gsi_it=self.gsi_it)
     
     def build_timeseries(self, interactive_figure=False):
         for sensor, channel_list in self.channel_dict.items():
             if sensor in self.config_dict['sensor_list']:
                 experiment_timeseries_datetime_init=None
-                array_metric_list = [f'{sensor}_bias_post_corr_GSIstage_1',
-                                     f'{sensor}_std_GSIstage_1',
-                                     f'{sensor}_variance_GSIstage_1',
-                                     f'{sensor}_sqrt_bias_GSIstage_1',
-                                     f'{sensor}_nobs_used_GSIstage_1',
-                                     f'{sensor}_nobs_tossed_GSIstage_1',
+                array_metric_list = [f'{sensor}_bias_post_corr_GSIstage_{self.gsi_it}',
+                                     f'{sensor}_std_GSIstage_{self.gsi_it}',
+                                     f'{sensor}_variance_GSIstage_{self.gsi_it}',
+                                     f'{sensor}_sqrt_bias_GSIstage_{self.gsi_it}',
+                                     f'{sensor}_nobs_used_GSIstage_{self.gsi_it}',
+                                     f'{sensor}_nobs_tossed_GSIstage_{self.gsi_it}',
                                      f'{sensor}_use_GSIstage_None'
                                  ]
                                      
@@ -184,7 +192,7 @@ class GSIRadianceFit2ObsFig(object):
                      alpha_background=0.3,
                      interactive=False):
         output_dir = os.path.join(self.config_dict['output_path'], f"{sensor}")
-        window_size = int(DAYS_TO_SMOOTH * (HOURS_PER_DAY / DA_CYCLE))
+        window_size = pd.Timedelta(hours=24.*DAYS_TO_SMOOTH)
         vbar_width = pd.Timedelta(hours=DA_CYCLE)
         # Check if the directory exists, and create it if it doesn't
         if not os.path.exists(output_dir):
@@ -200,11 +208,15 @@ class GSIRadianceFit2ObsFig(object):
         
         for channel_idx, channel_num in enumerate(self.channel_dict[sensor]):
             if len(sat_set) > 0:
-                max_yerr=0.1 # temperature (K)
+                max_yerr=0.5 # temperature (K)
                 fig, axes = plt.subplots(len(sat_set), ncols, sharex=True,sharey=False,
                                          squeeze=False,
                                          figsize=(2*ncols*3.74, len(sat_set)*4.53))
-                title_str0 = f"GSI radiance data analysis fit to observations (O-B) [metrics downloaded from {self.db_name}"
+                
+                if self.gsi_it == 1:
+                    title_str0 = f"GSI radiance data analysis fit to observations (O-B) [metrics downloaded from {self.db_name}"
+                elif self.gsi_it >= 2:
+                    title_str0 = f"GSI radiance data analysis fit to observations (O-A) [metrics downloaded from {self.db_name}"
                 
                 if init_datetime:
                     init_ctime = init_datetime.ctime()
@@ -229,15 +241,15 @@ class GSIRadianceFit2ObsFig(object):
                     # vertical axes labels
                     axes[row, 0].set_ylabel('Temperature mean error (K)')
                     axes[row, 1].set_ylabel('Temperature RMS error (K)')
-                    axes[row, 2].set_ylabel('Number of observations tossed')
-                    rejection_ratio_ax = axes[row, 2].twinx()
-                    rejection_ratio_ax.set_ylabel('Percentage of observations tossed (%)')
+                    axes[row, 2].set_ylabel('Number of observations used')
+                    #rejection_ratio_ax = axes[row, 2].twinx()
+                    #rejection_ratio_ax.set_ylabel('Percentage of observations tossed (%)')
                     
                     axes[row, 0].axhline(color='black', lw=0.5)
 
-                    rejection_ratio_ax.set_ylim(0, 100)
-                    rejection_ratio_ax.set_yticks(np.arange(0, 100.1, 20))                    
-                    rejection_ratio_ax.set_yticks(np.arange(0, 100.1, 5), minor=True)
+                    #rejection_ratio_ax.set_ylim(0, 100)
+                    #rejection_ratio_ax.set_yticks(np.arange(0, 100.1, 20))                    
+                    #rejection_ratio_ax.set_yticks(np.arange(0, 100.1, 5), minor=True)
 
                     # Set ticks on both left and right vertical axes
                     axes[row, 0].tick_params(axis='y', which='both', left=True, right=True)
@@ -250,26 +262,25 @@ class GSIRadianceFit2ObsFig(object):
                     for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
                         for full_stat_name, timeseries_data in timeseries_dict.items():
                             for stat_label, value_dict in timeseries_data.value_dict.items():
-                                if stat_label == 'bias_post_corr_GSIstage_1' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                                if stat_label == f'bias_post_corr_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """ mean error plot
                                     """
                                     bias_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
                                     bias_values = np.array(value_dict[sat_sensor])[:,channel_idx]
                                     std_timestamps = timeseries_dict[
-                                        f'{sensor}_std_GSIstage_1'].timestamp_dict[
-                                            'std_GSIstage_1'][sat_sensor]
+                                        f'{sensor}_std_GSIstage_{self.gsi_it}'].timestamp_dict[
+                                            f'std_GSIstage_{self.gsi_it}'][sat_sensor]
                                     std_values = timeseries_dict[
-                                        f'{sensor}_std_GSIstage_1'].value_dict[
-                                            'std_GSIstage_1'][sat_sensor]
+                                        f'{sensor}_std_GSIstage_{self.gsi_it}'].value_dict[
+                                            f'std_GSIstage_{self.gsi_it}'][sat_sensor]
                                             
-                                    
                                     nobs_used_timestamps = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_1'
-                                        ].timestamp_dict['nobs_used_GSIstage_1'
+                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
+                                        ].timestamp_dict[f'nobs_used_GSIstage_{self.gsi_it}'
                                             ][sat_sensor]
                                     nobs_used_values = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_1'
-                                        ].value_dict[f'nobs_used_GSIstage_1'
+                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
+                                        ].value_dict[f'nobs_used_GSIstage_{self.gsi_it}'
                                             ][sat_sensor]
                                     
                                     use_timestamps = timeseries_dict[
@@ -287,19 +298,18 @@ class GSIRadianceFit2ObsFig(object):
                                             std_time_idx = std_timestamps.index(bias_timestamp)
                                             yerr = np.array(std_values)[std_time_idx, channel_idx]
                                             
-                                            if yerr:
+                                            if yerr is not None:
                                                 yerrs.append(yerr)
                                             else:
                                                 yerrs.append(np.nan)
                                         else:
                                             yerrs.append(np.nan)
                                         
-
                                         if bias_timestamp in nobs_used_timestamps:
                                             nobs_used_time_idx = nobs_used_timestamps.index(bias_timestamp)
                                             nobs_used_channel = np.array(nobs_used_values)[nobs_used_time_idx, channel_idx]
                                             
-                                            if nobs_used_channel:
+                                            if nobs_used_channel is not None:
                                                 nobs_used_arr.append(nobs_used_channel)
                                             else:
                                                 nobs_used_arr.append(np.nan)
@@ -310,32 +320,34 @@ class GSIRadianceFit2ObsFig(object):
                                             use_time_idx = use_timestamps.index(bias_timestamp)
                                             use_flag = np.array(use_values)[use_time_idx, channel_idx]
                                             
-                                            if use_flag:
+                                            if use_flag is not None:
                                                 use_flags.append(use_flag)
                                             else:
                                                 use_flags.append(np.nan)
                                         else:
                                             use_flags.append(np.nan)
                                             
-                                    use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
+                                    #use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
                                     mean_values_plot = np.array([np.nan if x is None else float(x) for x in bias_values])
-                                    yerrs_plot = np.array([np.nan if x is None else float(x) for x in yerrs])
-                                    nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
-                                    standard_errs = np.array(yerrs_plot) / np.sqrt(nobs_used_plot)
+                                    #yerrs_plot = np.array([np.nan if x is None else float(x) for x in yerrs])
+                                    #nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
+                                    standard_errs = np.array(yerrs) / np.sqrt(nobs_used_arr)
 
                                     mean_values_smooth = pd.Series(
-                                        mean_values_plot,
+                                        np.ma.masked_where(
+                                            np.array(use_flags) < 1,
+                                            mean_values_plot),
                                         index=bias_timestamps).rolling(
                                             window=window_size,
+                                            min_periods=1,
                                             center=True,
-                                            win_type='triang').mean()
+                                            #win_type='triang'
+                                        ).mean()
                                     
                                     standard_errs_times_2 = 2.*standard_errs
                                     yerr_bot = mean_values_plot - standard_errs
                                     
-                                    use_flags_plot_mask = np.ma.masked_where(
-                                        use_flags_plot < 1, 30.*use_flags_plot)
-                                    
+                                    '''
                                     axes[row, 0].bar(
                                         bias_timestamps,
                                         use_flags_plot_mask,
@@ -344,7 +356,7 @@ class GSIRadianceFit2ObsFig(object):
                                         color=self.config_dict['color_list'][experiment_idx],
                                         alpha=0.5*alpha_background
                                     )
-                                    
+                                    '''
                                     axes[row, 0].bar(
                                         bias_timestamps,
                                         standard_errs_times_2,
@@ -395,19 +407,19 @@ class GSIRadianceFit2ObsFig(object):
                                         alpha = 1.0,
                                     )
                                     '''
-                                    axes[row,0].legend(loc='upper left')
+                                    axes[row,0].legend(loc='lower right')
                             
-                                elif stat_label == 'sqrt_bias_GSIstage_1' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                                elif stat_label == f'sqrt_bias_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """RMS error plot
                                     """
                                     rmse_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
                                     rmse_values = np.array(value_dict[sat_sensor])[:,channel_idx]
                                     obs_err_var_timestamps = timeseries_dict[
-                                        f'{sensor}_variance_GSIstage_1'].timestamp_dict[
-                                            'variance_GSIstage_1'][sat_sensor]
+                                        f'{sensor}_variance_GSIstage_{self.gsi_it}'].timestamp_dict[
+                                            f'variance_GSIstage_{self.gsi_it}'][sat_sensor]
                                     obs_err_var_values = timeseries_dict[
-                                        f'{sensor}_variance_GSIstage_1'].value_dict[
-                                            'variance_GSIstage_1'][sat_sensor]
+                                        f'{sensor}_variance_GSIstage_{self.gsi_it}'].value_dict[
+                                            f'variance_GSIstage_{self.gsi_it}'][sat_sensor]
                                     use_timestamps = timeseries_dict[
                                         f'{sensor}_use_GSIstage_None'].timestamp_dict[
                                             'use_GSIstage_None'][sat_sensor]
@@ -422,8 +434,8 @@ class GSIRadianceFit2ObsFig(object):
                                             obs_err_var_time_idx = obs_err_var_timestamps.index(rmse_timestamp)
                                             yerr2 = np.array(obs_err_var_values)[obs_err_var_time_idx, channel_idx]
                                             
-                                            if yerr2:
-                                                yerrs2.append(yerr)
+                                            if yerr2 is not None:
+                                                yerrs2.append(yerr2)
                                             else:
                                                 yerrs2.append(np.nan)
                                         else:
@@ -433,25 +445,27 @@ class GSIRadianceFit2ObsFig(object):
                                             use_time_idx = use_timestamps.index(rmse_timestamp)
                                             use_flag = np.array(use_values)[use_time_idx, channel_idx]
                                             
-                                            if use_flag:
+                                            if use_flag is not None:
                                                 use_flags.append(use_flag)
                                             else:
                                                 use_flags.append(np.nan)
                                         else:
                                             use_flags.append(np.nan)
                                 
-                                    yerrs_plot = np.sqrt(np.array([np.nan if x is None else float(x) for x in yerrs2]))
-                                    use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
-                                    max_yerr = np.max(np.nan_to_num(yerrs_plot), initial=max_yerr)
+                                    #yerrs_plot = np.sqrt(np.array([np.nan if x is None else float(x) for x in yerrs2]))
+                                    #use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
+                                    max_yerr = np.max(np.nan_to_num(np.sqrt(yerrs2)), initial=max_yerr)
                                     rmse_values_plot = np.array([np.nan if x is None else float(x) for x in rmse_values])
-                                    rmse_values_smooth = pd.Series(rmse_values_plot,
-                                                            index=rmse_timestamps).rolling(
-                                                                window=window_size,
-                                                                center=True,
-                                                                win_type='triang'
-                                                                ).mean()
-                                    use_flags_plot_mask = np.ma.masked_where(
-                                        use_flags_plot < 1, 30.*use_flags_plot)
+                                    rmse_values_smooth = pd.Series(
+                                        np.ma.masked_where(
+                                            np.array(use_flags) < 1,
+                                            rmse_values_plot),
+                                        index=rmse_timestamps).rolling(
+                                            window=window_size,
+                                            min_periods=1,
+                                            center=True,
+                                            #win_type='triang'
+                                        ).mean()
                                 
                                     '''
                                     axes[row, 1].bar(
@@ -462,7 +476,7 @@ class GSIRadianceFit2ObsFig(object):
                                         color=self.config_dict['color_list'][experiment_idx],
                                         alpha=alpha_background
                                     )
-                                    '''
+                                    
                                     
                                     axes[row, 1].bar(
                                         rmse_timestamps,
@@ -472,7 +486,7 @@ class GSIRadianceFit2ObsFig(object):
                                         color=self.config_dict['color_list'][experiment_idx],
                                         alpha=0.5*alpha_background
                                     )
-                                    
+                                    '''
                                     axes[row, 1].plot(
                                         rmse_timestamps,
                                         rmse_values_plot,
@@ -496,42 +510,66 @@ class GSIRadianceFit2ObsFig(object):
                                         ls=self.config_dict['ls_list'][experiment_idx],
                                         label=self.friendly_names_dict[experiment],
                                     )
-                                    axes[row,1].legend(loc='upper left')
+                                    axes[row,1].legend(loc='lower right')
                             
-                                elif stat_label == 'nobs_tossed_GSIstage_1' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                                elif stat_label == f'nobs_used_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """ nobs tossed and rejection ratio plot
                                     """
-                                    nobs_tossed_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
-                                    nobs_tossed_values = np.array(value_dict[sat_sensor])[:,channel_idx]
+                                    nobs_used_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
+                                    nobs_used_values = np.array(value_dict[sat_sensor])[:,channel_idx]
+                                    '''
                                     nobs_used_timestamps = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_1'
-                                        ].timestamp_dict['nobs_used_GSIstage_1'
+                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
+                                        ].timestamp_dict[f'nobs_used_GSIstage_{self.gsi_it}'
                                             ][sat_sensor]
                                     nobs_used_values = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_1'
-                                        ].value_dict[f'nobs_used_GSIstage_1'
+                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
+                                        ].value_dict[f'nobs_used_GSIstage_{self.gsi_it}'
                                             ][sat_sensor]
-                                        
-                                    nobs_used_arr=list()
-                                    nobs_tossed_arr = list()
-                                    for time_idx, nobs_tossed_timestamp in enumerate(nobs_tossed_timestamps):
-                                        if nobs_tossed_timestamp in nobs_used_timestamps:
-                                            nobs_used_time_idx = nobs_used_timestamps.index(nobs_tossed_timestamp)
-                                            nobs_used_channel = np.array(nobs_used_values)[nobs_used_time_idx, channel_idx]
-                                            if nobs_used_channel:
-                                                nobs_used_arr.append(nobs_used_channel)
-                                                
-                                            else:
-                                                nobs_used_arr.append(np.nan)
-                                        else:
-                                            nobs_used_arr.append(np.nan)
-                                            
-                                    nobs_tossed_plot = np.array([np.nan if x is None else float(x) for x in nobs_tossed_values])
-                                    nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
+                                    '''
+                                    use_timestamps = timeseries_dict[
+                                        f'{sensor}_use_GSIstage_None'].timestamp_dict[
+                                            'use_GSIstage_None'][sat_sensor]
+                                    use_values = timeseries_dict[
+                                        f'{sensor}_use_GSIstage_None'].value_dict[
+                                            'use_GSIstage_None'][sat_sensor]
                                     
+                                    #nobs_used_arr=list()
+                                    #nobs_tossed_arr = list()
+                                    use_flags=list()
+                                    
+                                    for time_idx, nobs_use_timestamp in enumerate(nobs_used_timestamps):
+                                        if nobs_use_timestamp in use_timestamps:
+                                            use_time_idx = use_timestamps.index(nobs_use_timestamp)
+                                            use_flag = np.array(use_values)[use_time_idx, channel_idx]
+                                            
+                                            if use_flag is not None:
+                                                use_flags.append(use_flag)
+                                            else:
+                                                use_flags.append(np.nan)
+                                        else:
+                                            use_flags.append(np.nan)
+          
+                                    
+                                    #nobs_tossed_plot = np.array([np.nan if x is None else float(x) for x in nobs_tossed_values])
+                                    
+                                    nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_values])
+                                    '''
                                     rejection_percent = (100.*nobs_tossed_plot) / (
                                         nobs_used_plot + nobs_tossed_plot)
-                                        
+                                    ''' 
+
+                                    nobs_used_smooth = pd.Series(
+                                        np.ma.masked_where(
+                                            np.array(use_flags) < 1,
+                                            nobs_used_plot),
+                                        index=nobs_used_timestamps).rolling(
+                                            window=window_size,
+                                            min_periods=1,
+                                            center=True,
+                                            #win_type='triang'
+                                        ).mean()
+                                    '''
                                     axes[row, 2].bar(
                                                 nobs_tossed_timestamps,
                                                 nobs_tossed_plot,
@@ -551,9 +589,29 @@ class GSIRadianceFit2ObsFig(object):
                                                 ls=self.config_dict['ls_list'][experiment_idx],
                                                 label=f"{self.friendly_names_dict[experiment]}"
                                             )
-
-                                    #axes[row,2].legend(loc='upper left')
-                                    rejection_ratio_ax.legend(loc='upper right')
+                                    '''
+                                    axes[row, 2].plot(
+                                        nobs_used_timestamps,
+                                        nobs_used_plot,
+                                        marker='none',
+                                        color=self.config_dict['color_list'][experiment_idx],
+                                        alpha=alpha_background,
+                                        lw=0.5,
+                                        ls='-',
+                                    )
+                                    
+                                    axes[row, 2].plot(
+                                        nobs_used_timestamps,
+                                        nobs_used_smooth,
+                                        marker='none',
+                                        color=self.config_dict['color_list'][experiment_idx],
+                                        alpha=alpha_foreground,
+                                        lw=self.config_dict['lw_list'][experiment_idx],
+                                        ls=self.config_dict['ls_list'][experiment_idx],
+                                        label=f"{self.friendly_names_dict[experiment]}"
+                                    )
+                                    axes[row,2].legend(loc='lower right')
+                                    #rejection_ratio_ax.legend(loc='upper right')
 
                                 axes[row, 0].xaxis.set_major_formatter(
                                     mdates.ConciseDateFormatter(
@@ -591,18 +649,25 @@ class GSIRadianceFit2ObsFig(object):
                         np.arange(0, 3. * max_yerr + 1, 0.5)
                     )
                     
-                    axes[row, 0].set_ylim(-1.5*max_yerr, 1.5*max_yerr)
-                    axes[row, 1].set_ylim(0, 3.*max_yerr)
+                    axes[row, 0].set_ylim(-1.0*max_yerr, 1.0*max_yerr)
+                    axes[row, 1].set_ylim(0, 2.*max_yerr)
                 
                 if interactive:
                     plt.show()
                 else:
-                    plt.savefig(os.path.join(output_dir, 
-                                  f'gsi_radiance_omb_{sensor}_ch{channel_num}.png'),
-                            dpi=300)
+                    if self.gsi_it ==1:
+                        fig_title=f'gsi_radiance_omb_{sensor}_ch{channel_num}.png'
+                    elif self.gsi_it >=2:
+                        fig_title=f'gsi_radiance_oma_{sensor}_ch{channel_num}.png'
+                    plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
                 plt.close()
 
 def run_microwave_sounders(sensor_list=['amsua', 'amsub', 'atms', 'ssmi', 'ssmis']):
+    prun(sensor_list=sensor_list)
+    
+def run_microwave_sounders2(sensor_list=['amsua', 'amsub', 'atms', 'ssmi', 
+                                         'ssmis','hirs2', 'hirs3', 'hirs4',
+                                         'ssu', 'msu']):
     prun(sensor_list=sensor_list)
 
 def run_atms(sensor_list=['atms']):
@@ -619,6 +684,7 @@ def run_avhrr(sensor_list = ['avhrr2', 'avhrr3']):
 
 def prun(sensor_list=None):
     args = parse_arguments()
+    gsi_it = args.gsi_stage
     
     # Initialize MPI
     comm = MPI.COMM_WORLD
@@ -649,7 +715,8 @@ def prun(sensor_list=None):
             start_date=global_config_dict['start_date'],
             stop_date=global_config_dict['stop_date'],
             select_sat_name = select_sat_name,
-            sat_name=args.satellite)
+            sat_name=args.satellite,
+            gsi_it=gsi_it)
 
         # Split the data by sensor (one part per sensor)
         data_frame_parts_dict = dict()
@@ -694,82 +761,20 @@ def prun(sensor_list=None):
             '''
             experiment_metrics_timeseries_data = GSIRadianceFit2ObsFig(
                 data_frame=data_frame,
-                input_data_frame=True
+                input_data_frame=True,
+                gsi_it=gsi_it
             )
             if args.channel != 9999:
                 experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
             experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive)
 
-def prun0(sensor_list=None):
-    args = parser.parse_args()
-    # Initialize MPI communicator
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()  # Get the rank of the current process
-    size = comm.Get_size()  # Get the total number of processes
-
-    # Load global configurations and friendly names
-    global_config_dict, global_friendly_names_dict = config()
-    
-    if args.sensor != 'all':
-        sensor_list = [args.sensor]
-    
-    if sensor_list==None:
-        sensor_list = list()
-        for sensor in global_config_dict['sensor_list']:
-            sensor_list.append(sensor)
-            
-    if args.satellite != 'all':
-        select_sat_name = True
-    
-    if rank == 0:
-        global_data_frame = get_data_frame(global_config_dict['experiment_list'],
-                                           sensor_list,
-                                           start_date=global_config_dict['start_date'],
-                                           stop_date=global_config_dict['stop_date'],
-                                           select_sat_name = select_sat_name,
-                                           sat_name=args.satellite)
-    else:
-        global_data_frame = None
-    
-    global_data_frame = comm.bcast(global_data_frame, root=0)
-    
-    # Calculate how many sensors each process should handle
-    sensors_per_process = len(sensor_list) // size
-
-    # Handle leftover sensors (remaining sensors are distributed to the first few processes)
-    leftover_sensors = len(sensor_list) % size
-
-    # Calculate the start and end indices for each process
-    start_idx = rank * sensors_per_process + min(rank, leftover_sensors)  # Adjust start index for extra sensors
-    end_idx = start_idx + sensors_per_process + (1 if rank < leftover_sensors else 0)  # Adjust end index for extra sensors
-
-    # Slice the sensor list for this process
-    local_sensor_list = sensor_list[start_idx:end_idx]
-    
-    # Each process handles its portion of the sensor list
-    for sensor in local_sensor_list:
-        experiment_metrics_timeseries_data = GSIRadianceFit2ObsFig(
-            data_frame=global_data_frame[
-                global_data_frame['metric_instrument_name']==sensor],
-            input_data_frame=True
-        )
-        if args.channel != 9999:
-            experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
-        
-        # Set the current sensor for the experiment
-        experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
-        #print(f'{sensor}', rank)
-        
-        # Build time series data for the current sensor
-        experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive)
-
 def main():
     """
     """
     #run_avhrr()
     #run_tovs()
-    run_microwave_sounders()
+    run_microwave_sounders2()
     #run_atms()
     #prun()
 

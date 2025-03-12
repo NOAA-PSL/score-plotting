@@ -70,7 +70,7 @@ def get_data_frame(experiment_list,
 
     db_action_response = score_db_base.handle_request(request_dict)    
     data_frame = db_action_response.details['records']
-    
+
     # sort by timestamp, created at
     data_frame.sort_values(by=['expt_name',
                                'metric_name',
