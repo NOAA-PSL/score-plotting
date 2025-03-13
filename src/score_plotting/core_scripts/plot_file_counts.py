@@ -9,22 +9,38 @@ Collection of methods to facilitate handling of score db requests
 
 import os
 import pathlib
+import argparse
 from dataclasses import dataclass, field
 from collections import namedtuple
 from datetime import datetime
+from datetime import date
 
 import math
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
 
 from score_db.expt_file_counts import ExptFileCountRequest
 from score_plotting.attrs.file_counts_plot_attrs import plot_attrs
 from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
-# figure output directory
-WORK_DIR = os.path.join('/', 'media', 'darr', 'results', 'figures')
+HOURS_PER_DAY = 24. # hours
+DA_CYCLE = 6. # hours
+DAYS_TO_SMOOTH = 1. # days
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    
+    # Make figure_output_path optional (defaults to $HOME)
+    parser.add_argument('figure_output_path', type=str, nargs='?',
+                        default=pathlib.Path.home(),
+                        help='Path to where figures will be saved')
+    
+    args = parser.parse_args()
+
+    return args
 
 RequestData = namedtuple('RequestData', ['datetime_str', 'experiment',
                                          'metric_format_str', 'metric',
@@ -43,7 +59,7 @@ plot_control_dict1 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metrics': ['count'],
                                       'stat_group_frmt_str':
                                       'file_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 
 plot_control_dict2 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2000-01-01 00:00:00',
@@ -59,7 +75,7 @@ plot_control_dict2 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metrics': ['count'],
                                       'stat_group_frmt_str':
                                       'file_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 
 plot_control_dict3 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2010-01-01 00:00:00',
@@ -75,7 +91,7 @@ plot_control_dict3 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metrics': ['count'],
                                       'stat_group_frmt_str':
                                       'file_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict4 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2015-01-01 00:00:00',
                                     'start': '2010-01-01 00:00:00'},
@@ -90,7 +106,7 @@ plot_control_dict4 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metrics': ['count'],
                                       'stat_group_frmt_str':
                                       'file_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict5 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2020-01-01 00:00:00',
                                     'start': '2015-01-01 00:00:00'},
@@ -105,7 +121,7 @@ plot_control_dict5 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metrics': ['count'],
                                       'stat_group_frmt_str':
                                       'file_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2024-01-01 00:00:00',
                                     'start': '2020-01-01 00:00:00'},
@@ -120,11 +136,23 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metrics': ['count'],
                                       'stat_group_frmt_str':
                                       'file_{metric}'}],
-                     'work_dir': WORK_DIR}
-
-def unique(sequence):
-    seen = set()
-    return [x for x in sequence if not (x in seen or seen.add(x))]
+                     'work_dir': parse_arguments().figure_output_path}
+                     
+plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+                                    'end': '2026-01-01 00:00:00',
+                                    'start': '1978-01-01 00:00:00'},
+                     'db_request_name': 'expt_metrics',
+                     'method': 'GET',
+                     'experiments': [{'graph_color': 'black',
+                                      'graph_label': 'increments',
+                                      'name': 'ufs_replay_ext',
+                                      'wallclock_start': '2024-10-01 00:00:00'}],
+                     'fig_base_fn': 'files',
+                     'stat_groups': [{'cycles': [0, 21600, 43200, 64800],
+                                      'metrics': ['count'],
+                                      'stat_group_frmt_str':
+                                      'file_{metric}'}],
+                     'work_dir': parse_arguments().figure_output_path}
 
 def get_experiment_file_counts(request_data):
     
@@ -160,18 +188,19 @@ def get_experiment_file_counts(request_data):
     return result.details['records']
 
 def build_base_figure():
+    
     fig, ax = plt.subplots()
     
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     plt.tick_params(axis='x', which='both', bottom=True, top=False,
-                    labelbottom=True, labelsize=3)
+                    labelbottom=True)
     
     return(fig, ax)
 
 def format_figure(ax, pa):
-    ax.set_xlim([pd.Timestamp(plot_control_dict['date_range']['start']).timestamp(),
-                 pd.Timestamp(plot_control_dict['date_range']['end']).timestamp()])
+    ax.set_xlim([pd.Timestamp(plot_control_dict['date_range']['start']),
+                 pd.Timestamp(plot_control_dict['date_range']['end'])])
     ax.set_ylim([pa.axes_attrs.ymin, pa.axes_attrs.ymax])
     plt.xlabel(xlabel=pa.xlabel.label,
                horizontalalignment=pa.xlabel.horizontalalignment)
@@ -206,6 +235,7 @@ def save_figure(dest_full_path):
 
 def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
                      date_range):
+    window_size = pd.Timedelta(hours=24.*DAYS_TO_SMOOTH)
     file_count = open(os.path.join(work_dir,'File_count_unexpected.txt'),'a')
     if not isinstance(metrics_df, DataFrame):
         msg = 'Input data to plot_file_counts must be type pandas.DataFrame '\
@@ -230,11 +260,13 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
     for row in metrics_to_show.itertuples():
         if row.cycle >= date_range.start and row.cycle < date_range.end:
             counts.append(row.count)
-            timestamps.append(row.cycle.timestamp())
+            timestamps.append(row.cycle)
+            '''
             labels.append('%02d-%02d-%04d' % (row.cycle.month,
                                               row.cycle.day,
                                               row.cycle.year,
                                               ))
+            '''
             cycle_labels.append('%dZ' % row.cycle.hour)
             if row.cycle.hour == 0:
                 colors.append('lightcoral')
@@ -272,24 +304,50 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
                                               row.cycle.year,
                                               row.cycle.hour
                                           ))
-    plt.bar(timestamps, counts,
-            alpha=0.25,
-            width=21600.,
-            color=colors)
-    
-    for i in range(4):
-        """ Plot the first four cycles to format the legend
+                                          
+            else:
+                colors.append('black')
+    myLabel = set(cycle_labels) 
+    for i in range(len(myLabel)):
+        """ Plot the first unique cycles to format the legend
         """
-        plt.scatter(timestamps[i], counts[i], ls='None', marker='|',
-             color=colors[i], alpha=0.25, label=cycle_labels[i])
+        plt.scatter(timestamps[i], counts[i], #s=1,
+                c=colors[i], marker='|',
+                alpha=0.5, label=cycle_labels[i],
+                linewidths=0.5, edgecolors='none')
+    
+    
+    # proceed with onward
+    plt.scatter(timestamps[len(myLabel):], counts[len(myLabel):], #s=1,
+                c=colors[len(myLabel):], marker='|', alpha=0.5,
+                linewidths=0.5, edgecolors='none')
+    
+    plt.plot(timestamps, counts, ls='-', marker='none', color='black',
+             alpha=0.1, lw=0.5)
+    
+    values_smooth = pd.Series(counts, index=timestamps).rolling(
+                        window=window_size,
+                        min_periods=1,
+                        center=True).sum()
+    plt.plot(timestamps, values_smooth, ls='-', marker='none', color='black',
+             alpha=0.9, lw=0.75, label=f'{int(DAYS_TO_SMOOTH)} day total')
+    
+    format_figure(ax, pa)
 
-    plt.scatter(timestamps[4:], counts[4:], ls='None', marker='|',
-             color=colors[4:], alpha=0.25)#experiments[0]['graph_color'])
+    today = date.today()
+    plt.title(today, loc = "right")
+    
+    locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
+    #locator = mdates.MonthLocator()
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(formatter)
     plt.title(expt_name)
     format_figure(ax, pa)
     fig_fn = build_fig_dest(work_dir, fig_base_fn, metric, date_range)  
 
     #create timestamps that are inorder for entire timeline (not limited to 1 year)
+    '''
     timestamps_int = [int(timestamps) for timestamps in timestamps]
     all_monthly_labels = [datetime.fromtimestamp(timestamps_int).strftime('%m-%Y') for timestamps_int in timestamps_int]
 
@@ -301,7 +359,7 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
                labels=monthly_labels, rotation=45,ha='right',
                )
     plt.subplots_adjust(bottom=0.22)
-
+    '''
     save_figure(fig_fn)
 
 @dataclass
@@ -339,12 +397,16 @@ class PlotFileCountRequest(PlotInnovStatsRequest):
                     self.date_range)
 
 if __name__=='__main__':
+    style_file_path = os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
+                                   'style_lib', 'half_horizontal.mplstyle')
+    plt.style.use(style_file_path)
     for i, plot_control_dict in enumerate([plot_control_dict1,
                                            plot_control_dict2,
-                                           #plot_control_dict3,
-                                           #plot_control_dict4,
-                                           #plot_control_dict5,
-                                           #plot_control_dict6
+                                           plot_control_dict3,
+                                           plot_control_dict4,
+                                           plot_control_dict5,
+                                           plot_control_dict6,
+                                           plot_control_dict_ext
                                          ]):
         plot_request = PlotFileCountRequest(plot_control_dict)
         plot_request.submit()

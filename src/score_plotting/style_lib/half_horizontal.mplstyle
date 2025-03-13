@@ -1,0 +1,27 @@
+#### matplotlib style file for AGU figures
+
+### FONT
+font.size : 11
+font.family : sans-serif
+font.sans-serif : Roboto, Arial, Helvetica
+
+### TEXT
+#text.usetex : True
+
+### AXES
+axes.titlesize : 11
+axes.labelsize : 11
+
+### TICKS
+xtick.labelsize : 11
+ytick.labelsize : 11
+
+### Legend
+legend.fontsize : 11
+
+### FIGURE
+figure.titlesize : 11
+figure.figsize : 7.48, 4.53
+
+### SAVING FIGURES
+savefig.format : pdf
