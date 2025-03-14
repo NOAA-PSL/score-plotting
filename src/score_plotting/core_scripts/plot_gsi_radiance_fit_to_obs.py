@@ -41,7 +41,8 @@ def config():
         #'ls_list': [':', '-.', '--', '-'],
         'ls_list': ['-', '-', '-', '-'],
         'lw_list': [4.0, 3.0, 2.0, 1.0],
-        'sensor_list': get_instrument_channels().keys(),#['amsua'],
+        'sensor_list': get_instrument_channels().keys(),
+        #'sensor_list':['amsua'],
         'start_date': '2018-01-01 00:00:00',
         'stop_date': '2022-01-01 00:00:00',
     }
@@ -344,8 +345,9 @@ class GSIRadianceFit2ObsFig(object):
                                             #win_type='triang'
                                         ).mean()
                                     
-                                    standard_errs_times_2 = 2.*standard_errs
+                                    #standard_errs_times_2 = 2.*standard_errs
                                     yerr_bot = mean_values_plot - standard_errs
+                                    yerr_top = mean_values_plot + standard_errs
                                     
                                     '''
                                     axes[row, 0].bar(
@@ -357,9 +359,10 @@ class GSIRadianceFit2ObsFig(object):
                                         alpha=0.5*alpha_background
                                     )
                                     '''
-                                    axes[row, 0].bar(
+                                    axes[row, 0].fill_between(
                                         bias_timestamps,
-                                        standard_errs_times_2,
+                                        yerr_top,
+                                        y2=yerr_bot,
                                         width=vbar_width,
                                         bottom=yerr_bot,
                                         color=self.config_dict['color_list'][experiment_idx],
