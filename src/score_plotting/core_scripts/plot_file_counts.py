@@ -45,6 +45,7 @@ def parse_arguments():
 RequestData = namedtuple('RequestData', ['datetime_str', 'experiment',
                                          'metric_format_str', 'metric',
                                          'time_valid'],)
+
 plot_control_dict1 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '1981-07-01 00:00:00',
                                     'start': '1979-01-01 00:00:00'},
@@ -139,8 +140,8 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'work_dir': parse_arguments().figure_output_path}
                      
 plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
-                                    'end': '2026-01-01 00:00:00',
-                                    'start': '1978-01-01 00:00:00'},
+                                    'end': '2025-09-30 00:00:00',
+                                    'start': '2020-10-01 00:00:00'},
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
@@ -313,24 +314,25 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
         """
         plt.scatter(timestamps[i], counts[i], #s=1,
                 c=colors[i], marker='|',
-                alpha=0.5, label=cycle_labels[i],
+                alpha=0.67, label=cycle_labels[i],
                 linewidths=0.5, edgecolors='none')
     
     
     # proceed with onward
     plt.scatter(timestamps[len(myLabel):], counts[len(myLabel):], #s=1,
-                c=colors[len(myLabel):], marker='|', alpha=0.5,
+                c=colors[len(myLabel):], marker='|', alpha=0.67,
                 linewidths=0.5, edgecolors='none')
-    
-    plt.plot(timestamps, counts, ls='-', marker='none', color='black',
-             alpha=0.1, lw=0.5)
     
     values_smooth = pd.Series(counts, index=timestamps).rolling(
                         window=window_size,
                         min_periods=1,
                         center=True).sum()
+    
+    plt.fill_between(timestamps, values_smooth, color='black',
+             alpha=0.1)
+    
     plt.plot(timestamps, values_smooth, ls='-', marker='none', color='black',
-             alpha=0.9, lw=0.75, label=f'{int(DAYS_TO_SMOOTH)} day total')
+             alpha=0.9, lw=0.75, label=f'{int(DAYS_TO_SMOOTH)} day sum')
     
     format_figure(ax, pa)
 

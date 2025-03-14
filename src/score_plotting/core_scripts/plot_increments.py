@@ -37,13 +37,11 @@ def parse_arguments():
 
     return args
 
-parse_arguments().figure_output_path = os.path.join('/', 'Users', 'aschneider', 'projects',
-                        'sfs_dev_darr', 'results', 'figures')
-
 RequestData = namedtuple('RequestData', ['datetime_str', 'experiment',
                                          'metric_format_str', 'metric',
                                          'stat',
                                          'time_valid'],)
+
 plot_control_dict1 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '1999-01-01 00:00:00',
                                     'start': '1994-01-01 00:00:00'},
@@ -174,7 +172,7 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'work_dir': parse_arguments().figure_output_path}
                      
 plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
-                                    'start': '1987-10-01 00:00:00',
+                                    'start': '2020-10-01 00:00:00',
                                     'end': '2025-09-30 00:00:00'},
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
@@ -343,17 +341,17 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
         """
         plt.scatter(timestamps[i], values[i], #s=1,
                 c=colors[i], marker='|',
-                alpha=0.5, label=cycle_labels[i],
+                alpha=0.67, label=cycle_labels[i],
                 linewidths=0.5, edgecolors='none')
     
     
     # proceed with onward
     plt.scatter(timestamps[len(myLabel):], values[len(myLabel):], #s=1,
-                c=colors[len(myLabel):], marker='|', alpha=0.5,
+                c=colors[len(myLabel):], marker='|', alpha=0.67,
                 linewidths=0.5, edgecolors='none')
     
-    plt.plot(timestamps, values, ls='-', marker='none', color='black',
-             alpha=0.1, lw=0.5)
+    plt.fill_between(timestamps, values, color='black',
+             alpha=0.1)
     
     values_smooth = pd.Series(values, index=timestamps).rolling(
                         window=window_size,
