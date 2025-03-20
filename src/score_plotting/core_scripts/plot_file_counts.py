@@ -26,8 +26,6 @@ from score_db.expt_file_counts import ExptFileCountRequest
 from score_plotting.attrs.file_counts_plot_attrs import plot_attrs
 from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
-HOURS_PER_DAY = 24. # hours
-
 def parse_arguments():
     parser = argparse.ArgumentParser()
     

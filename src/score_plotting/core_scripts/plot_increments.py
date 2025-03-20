@@ -310,7 +310,7 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
             freq = pd.Timedelta(hours=args.da_cycle)
         )
     )
-    window_size = pd.Timedelta(hours=24.*args.days_to_smooth)
+    window_size = pd.Timedelta(hours=HOURS_PER_DAY * args.days_to_smooth)
 
     if not isinstance(metrics_df, DataFrame):
         msg = 'Input data to plot_increments must be type pandas.DataFrame '\
