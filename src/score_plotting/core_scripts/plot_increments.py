@@ -22,11 +22,17 @@ from score_plotting.attrs.increments_plot_attrs import plot_attrs
 from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
 HOURS_PER_DAY = 24. # hours
-DA_CYCLE = 6. # hours
-DAYS_TO_SMOOTH = 8. # days
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
+    
+    # Add DA cycle as an argument (optional, default to 6.0)
+    parser.add_argument('--da_cycle', type=float, default=6.,
+                        help='The DA cycle duration in hours (default: 6.0)')
+    
+    # Add days to smooth as an argument (optional, default to 8.0)
+    parser.add_argument('--days_to_smooth', type=float, default=8.,
+                        help='Number of days to smooth (default: 8.0)')
     
     # Make figure_output_path optional (defaults to $HOME)
     parser.add_argument('figure_output_path', type=str, nargs='?',
@@ -266,14 +272,22 @@ def format_figure(ax, pa):
                shadow=pa.legend.shadow,
                facecolor=pa.legend.facecolor)
 
-def build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range):
+def build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range,
+                   experiment_name=None, append_date_range=False):
     
     start = datetime.strftime(date_range.start, '%Y%m%dT%HZ')
     end = datetime.strftime(date_range.end, '%Y%m%dT%HZ')
     dest_fn = fig_base_fn
-    dest_fn += f'_{stat}_{metric}_{start}_to_{end}.png'
     
-    dest_full_path = os.path.join(work_dir, dest_fn)
+    if append_date_range:
+        dest_fn += f'_{stat}_{metric}_{start}_to_{end}.png'
+    else:
+        dest_fn += f'_{stat}_{metric}.png'
+    
+    if experiment_name is not None:
+        dest_full_path = os.path.join(work_dir, experiment_name, dest_fn)
+    else:
+        dest_full_path = os.path.join(work_dir, dest_fn)
     
     parent_dir = pathlib.Path(dest_full_path).parent
     pathlib.Path(parent_dir).mkdir(parents=True, exist_ok=True)
@@ -286,7 +300,17 @@ def save_figure(dest_full_path):
 
 def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn,
                      date_range):
-    window_size = pd.Timedelta(hours=24.*DAYS_TO_SMOOTH)
+    args = parse_arguments()
+    
+    time_domain = pd.Series(
+        data = np.nan,
+        index = pd.date_range(
+            start = date_range.start,
+            end = date_range.end,
+            freq = pd.Timedelta(hours=args.da_cycle)
+        )
+    )
+    window_size = pd.Timedelta(hours=24.*args.days_to_smooth)
 
     if not isinstance(metrics_df, DataFrame):
         msg = 'Input data to plot_increments must be type pandas.DataFrame '\
@@ -341,24 +365,44 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
         """
         plt.scatter(timestamps[i], values[i], #s=1,
                 c=colors[i], marker='|',
-                alpha=0.67, label=cycle_labels[i],
+                alpha=0.9, label=cycle_labels[i],
                 linewidths=0.5, edgecolors='none')
     
     
     # proceed with onward
     plt.scatter(timestamps[len(myLabel):], values[len(myLabel):], #s=1,
-                c=colors[len(myLabel):], marker='|', alpha=0.67,
+                c=colors[len(myLabel):], marker='|', alpha=0.9,
                 linewidths=0.5, edgecolors='none')
     
-    plt.fill_between(timestamps, values, color='black',
-             alpha=0.1)
+    values_timeseries = pd.Series(
+        data = values,
+        index = timestamps
+    ).combine_first(time_domain)
     
-    values_smooth = pd.Series(values, index=timestamps).rolling(
+    plt.fill_between(
+        values_timeseries.index,
+        np.nan_to_num(values_timeseries.values),
+        interpolate=True,
+        step='mid',
+        edgecolor='none',
+        lw=0,
+        color='black',
+        alpha=0.2
+    )
+    
+    values_smooth = values_timeseries.rolling(
                         window=window_size,
                         min_periods=1,
                         center=True).mean()
-    plt.plot(timestamps, values_smooth, ls='-', marker='none', color='black',
-             alpha=0.9, lw=0.75, label=f'{int(DAYS_TO_SMOOTH)} day SMA')
+    
+    plt.plot(values_smooth.index,
+             values_smooth.values,
+             ls='-',
+             marker='none',
+             color='black',
+             alpha=0.9,
+             lw=1.5,
+             label=f'{int(args.days_to_smooth)} day SMA')
     
     format_figure(ax, pa)
     if stat == 'RMS':
@@ -371,26 +415,15 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     plt.ylabel(expt_graph_label+" ("+row.metric_unit+")")
     
     locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
-    #locator = mdates.MonthLocator()
+    month_locator = mdates.MonthLocator()
     formatter = mdates.ConciseDateFormatter(locator)
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
+    ax.xaxis.set_minor_locator(month_locator)
     
-    fig_fn = build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range)
+    fig_fn = build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range,
+                            experiment_name=expt_name)
 
-    #create timestamps that are inorder for entire timeline (not limited to 1 year)
-    '''
-    timestamps_int = [int(timestamps) for timestamps in timestamps]
-    all_monthly_labels = [datetime.fromtimestamp(timestamps_int).strftime('%m-%Y') for timestamps_int in timestamps_int]
-
-    monthly_labels = unique(all_monthly_labels) 
-    plt.xticks(ticks=np.arange(sorted(timestamps)[0],
-                               sorted(timestamps)[-1],
-                               60*60*24*(365.25/12.))[:len(monthly_labels)],
-               labels=monthly_labels, rotation=45,ha='right',
-               )
-    '''
-    #plt.subplots_adjust(bottom=0.22)
     save_figure(fig_fn)
 
 @dataclass
