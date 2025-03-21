@@ -14,6 +14,7 @@ hatch.color:     white
 ### FONT
 font.family : serif
 font.sans-serif : 'Noto Serif CJK JP'
+font.size : 11
 
 ## ***************************************************************************
 ## * TEXT                                                                    *
@@ -22,6 +23,9 @@ font.sans-serif : 'Noto Serif CJK JP'
 ## See https://matplotlib.org/api/artist_api.html#module-matplotlib.text
 ## for more information on text properties
 text.color: A2A4A3
+
+### FIGURE
+figure.titlesize : 11
 
 ## ***************************************************************************
 ## * AXES                                                                    *
@@ -32,6 +36,8 @@ text.color: A2A4A3
 axes.facecolor:     black   # axes background color
 axes.edgecolor:     A2A4A3   # axes edge color
 axes.labelcolor:    A2A4A3
+axes.titlesize : 11
+axes.labelsize : 11
 
 
 ## ***************************************************************************
@@ -40,6 +46,8 @@ axes.labelcolor:    A2A4A3
 ## See https://matplotlib.org/api/axis_api.html#matplotlib.axis.Tick
 xtick.color:          A2A4A3  # color of the tick labels
 ytick.color:         A2A4A3   # color of the tick labels
+xtick.labelsize : 11
+ytick.labelsize : 11
 
 ## ***************************************************************************
 ## * GRIDS                                                                   *
@@ -69,3 +77,6 @@ savefig.dpi:       100      # figure dots per inch or 'figure'
 savefig.facecolor: black        # figure facecolor when saving
 savefig.edgecolor: black        # figure edgecolor when saving
 savefig.format:    png         # {png, ps, pdf, svg}
+
+## Legend
+legend.fontsize : 11
