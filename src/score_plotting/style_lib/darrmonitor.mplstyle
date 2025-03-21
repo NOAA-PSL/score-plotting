@@ -1,0 +1,71 @@
+## ***************************************************************************
+## * PATCHES                                                                 *
+## ***************************************************************************
+## Patches are graphical objects that fill 2D space, like polygons or circles.
+## See https://matplotlib.org/api/artist_api.html#module-matplotlib.patches
+## for more information on patch properties.
+patch.edgecolor:       white  # if forced, or patch is not filled
+
+## ***************************************************************************
+## * HATCHES                                                                 *
+## ***************************************************************************
+hatch.color:     white
+
+### FONT
+font.family : serif
+font.sans-serif : 'Noto Serif CJK JP'
+
+## ***************************************************************************
+## * TEXT                                                                    *
+## ***************************************************************************
+## The text properties used by `text.Text`.
+## See https://matplotlib.org/api/artist_api.html#module-matplotlib.text
+## for more information on text properties
+text.color: A2A4A3
+
+## ***************************************************************************
+## * AXES                                                                    *
+## ***************************************************************************
+## Following are default face and edge colors, default tick sizes,
+## default fontsizes for ticklabels, and so on.  See
+## https://matplotlib.org/api/axes_api.html#module-matplotlib.axes
+axes.facecolor:     black   # axes background color
+axes.edgecolor:     A2A4A3   # axes edge color
+axes.labelcolor:    A2A4A3
+
+
+## ***************************************************************************
+## * TICKS                                                                   *
+## ***************************************************************************
+## See https://matplotlib.org/api/axis_api.html#matplotlib.axis.Tick
+xtick.color:          A2A4A3  # color of the tick labels
+ytick.color:         A2A4A3   # color of the tick labels
+
+## ***************************************************************************
+## * GRIDS                                                                   *
+## ***************************************************************************
+grid.color:     565A5C  # grid color
+grid.linestyle: dotted       # 
+grid.linewidth: 0.8     # in points
+grid.alpha:     1.0     # transparency, between 0.0 and 1.0
+
+## ***************************************************************************
+## * FIGURE                                                                  *
+## ***************************************************************************
+## See https://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure
+
+figure.figsize:     10.24, 5.76  # figure size in inches
+figure.dpi:         100       # figure dots per inch
+figure.facecolor:   black     # figure facecolor
+figure.edgecolor:   black     # figure edgecolor
+
+## ***************************************************************************
+## * SAVING FIGURES                                                          *
+## ***************************************************************************
+## The default savefig params can be different from the display params
+## e.g., you may want a higher resolution, or to make the figure
+## background white
+savefig.dpi:       100      # figure dots per inch or 'figure'
+savefig.facecolor: black        # figure facecolor when saving
+savefig.edgecolor: black        # figure edgecolor when saving
+savefig.format:    png         # {png, ps, pdf, svg}

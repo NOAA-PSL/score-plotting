@@ -38,6 +38,12 @@ def parse_arguments():
     parser.add_argument('--da_cycle', type=float, default=6.,
                         help='The DA cycle duration in hours (default: 6.0)')
     
+    parser.add_argument(
+        '--dark_theme', 
+        action='store_true',  # If this argument is provided, dark_theme will be True
+        help="Enable dark theme (default is False)"
+    )
+    
     args = parser.parse_args()
 
     return args
@@ -244,7 +250,16 @@ def save_figure(dest_full_path):
 
 def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
                      date_range):
-    da_cycle = parse_arguments().da_cycle
+    args = parse_arguments()
+    
+    if args.dark_theme:
+        default_plot_color = '#CFB87C'
+        fill_color = '#565A5C'
+    else:
+        default_plot_color = 'black'
+        fill_color = '#A2A4A3'
+    
+    da_cycle = args.da_cycle
     
     file_count = open(os.path.join(work_dir,'File_count_unexpected.txt'),'a')
     time_domain = pd.Series(
@@ -324,21 +339,11 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
                                           ))
                                           
             else:
-                colors.append('black')
-    myLabel = set(cycle_labels) 
-    for i in range(len(myLabel)):
-        """ Plot the first unique cycles to format the legend
-        """
-        plt.scatter(timestamps[i], counts[i], #s=1,
-                c=colors[i], marker='|',
-                alpha=0.9, label=cycle_labels[i],
-                linewidths=0.5, edgecolors='none')
+                colors.append(default_plot_color)
     
-    # proceed with onward
-    plt.scatter(timestamps[len(myLabel):], counts[len(myLabel):], #s=1,
-                c=colors[len(myLabel):], marker='|', alpha=0.9,
-                linewidths=0.5, edgecolors='none')
-    
+    if args.dark_theme:
+        plt.grid()
+        
     counts_timeseries = pd.Series(
         data = counts,
         index = timestamps
@@ -351,9 +356,25 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
         step='mid',
         edgecolor='none',
         lw=0,
-        color='black',
-        alpha=0.2
+        color=fill_color,
+        zorder=2
     )
+    
+    myLabel = set(cycle_labels) 
+    for i in range(len(myLabel)):
+        """ Plot the first unique cycles to format the legend
+        """
+        plt.scatter(timestamps[i], counts[i], #s=1,
+                c=colors[i], marker='|',
+                alpha=0.9, label=cycle_labels[i],
+                linewidths=0.5,
+                zorder=3)
+    
+    # proceed with onward
+    plt.scatter(timestamps[len(myLabel):], counts[len(myLabel):], #s=1,
+                c=colors[len(myLabel):], marker='|', alpha=0.9,
+                linewidths=0.5,
+                zorder=3)
     
     format_figure(ax, pa)
 
@@ -408,8 +429,14 @@ class PlotFileCountRequest(PlotInnovStatsRequest):
                     self.date_range)
 
 if __name__=='__main__':
+    args = parse_arguments()
+    if args.dark_theme:
+        style_file = 'darrmonitor.mplstyle'
+    else:
+        style_file = 'half_horizontal.mplstyle'
+    
     style_file_path = os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
-                                   'style_lib', 'half_horizontal.mplstyle')
+                                   'style_lib', style_file)
     plt.style.use(style_file_path)
     for i, plot_control_dict in enumerate([plot_control_dict1,
                                            plot_control_dict2,
