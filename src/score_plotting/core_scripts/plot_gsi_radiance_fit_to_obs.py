@@ -7,6 +7,7 @@ import os
 import pathlib
 import warnings
 import argparse
+from datetime import datetime
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -19,32 +20,58 @@ from instrument_channel_nums import get_instrument_channels
 import satellite_names
 
 HOURS_PER_DAY = 24. # hours
-DA_CYCLE = 6. # hours
-DAYS_TO_SMOOTH = 8. # days
 
 import argparse
 
 def config():
-    args = parse_arguments() 
+    """Add experiment name entries to experiment_list and
+    experiment_plot_dict. The order of experiment_list is used
+    to determine the order of plotting.
+    """
+    args = parse_arguments()
+    if args.dark_theme:
+        mpl_style_sheet = 'darrmonitor.mplstyle'
+    else:
+        mpl_style_sheet = 'full_3x3pg.mplstyle'
+        
     config_dict = {
         'config_path':
             os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
                          'style_lib'),
-        'config_file': ['full_3x3pg.mplstyle'],
+        'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
         'experiment_list': ['NASA_GEOSIT_GSISTATS',
                             'GDAS',
                             'replay_observer_diagnostic_v1',
                             'scout_run_v1'
                          ],
-        'color_list': ['#E4002B', '#CFB87C','#0085CA', 'black'],
-        #'ls_list': [':', '-.', '--', '-'],
-        'ls_list': ['-', '-', '-', '-'],
-        'lw_list': [4.0, 3.0, 2.0, 1.0],
+        
+        'experiment_plot_dict': {
+            'NASA_GEOSIT_GSISTATS' :
+                {'color' : '#E4002B',
+                 'ls': '-',
+                 'lw': 1.5
+            },
+            'GDAS' : {
+                'color' : '#003087',
+                'ls': '-',
+                'lw': 1.25
+            },
+            'replay_observer_diagnostic_v1' : {
+                'color' : '#0085CA',
+                'ls': '-',
+                'lw': 1.
+            },
+            'scout_run_v1' : {
+                'color' : 'black',
+                'ls': '-',
+                'lw': 0.75
+            }
+            
+        },
         'sensor_list': get_instrument_channels().keys(),
-        #'sensor_list':['amsua'],
-        'start_date': '2018-01-01 00:00:00',
-        'stop_date': '2022-01-01 00:00:00',
+        'start_date': '2018-10-01 00:00:00',
+        'stop_date': '2019-09-30 00:00:00',
     }
     
     '''
@@ -54,7 +81,7 @@ def config():
     friendly_names_dict={"scout_run_v1": "scout run (3DVar)",
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
-                         "replay_observer_diagnostic_v1": "UFS Replay",
+                         "replay_observer_diagnostic_v1": "UFS-replay",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
@@ -90,6 +117,20 @@ def parse_arguments():
                         
     parser.add_argument('--gsi_stage', type=int, default=1,
                         help='GSI analysis iteration')
+                        
+    # Add DA cycle as an argument (optional, default to 6.0)
+    parser.add_argument('--da_cycle', type=float, default=6.,
+                        help='The DA cycle duration in hours (default: 6.0)')
+    
+    # Add days to smooth as an argument (optional, default to 8.0)
+    parser.add_argument('--days_to_smooth', type=float, default=8.,
+                        help='Number of days to smooth (default: 8.0)')
+                        
+    parser.add_argument(
+        '--dark_theme', 
+        action='store_true',  # If this argument is provided, dark_theme will be True
+        help="Enable dark theme (default is False)"
+    )
     
     args = parser.parse_args()
 
@@ -132,12 +173,6 @@ class GSIRadianceFit2ObsFig(object):
         self.config_dict, self.friendly_names_dict = config()
         self.channel_dict = get_instrument_channels()
         self.experiment_list = self.config_dict['experiment_list']
-        
-        if self.config_dict['config_path'] and self.config_dict['config_file']:
-            for style_file in self.config_dict['config_file']:
-                style_file_path = os.path.join(self.config_dict['config_path'],
-                                               style_file)
-                plt.style.use(style_file_path)
                 
         if input_data_frame:
             self.data_frame = data_frame
@@ -147,7 +182,55 @@ class GSIRadianceFit2ObsFig(object):
                                              self.config_dict['stop_date'],
                                              gsi_it=self.gsi_it)
     
-    def build_timeseries(self, interactive_figure=False):
+    def config_figure_params(self, days_to_smooth=1.):
+        if self.config_dict['config_path'] and self.config_dict['config_file']:
+            for style_file in self.config_dict['config_file']:
+                style_file_path = os.path.join(self.config_dict['config_path'],
+                                               style_file)
+                plt.style.use(style_file_path)
+        
+        if self.dark_theme:
+            self.default_plot_color = '#CFB87C'
+            self.fill_color = '#565A5C'
+            if 'GDAS' in self.config_dict['experiment_plot_dict'].keys():
+                self.config_dict['experiment_plot_dict']['GDAS']['color'] = 'white'
+
+            for expt_name in self.config_dict['experiment_plot_dict'].keys():
+                if self.config_dict['experiment_plot_dict'][expt_name]['color'] == 'black':
+                    self.config_dict['experiment_plot_dict'][expt_name]['color'] = self.default_plot_color
+        else:
+            self.default_plot_color = 'black'
+            self.fill_color = '#A2A4A3'
+            for expt_name in self.config_dict['experiment_plot_dict'].keys():
+                if self.config_dict['experiment_plot_dict'][expt_name]['color'] == '#CFB87C':
+                    self.config_dict['experiment_plot_dict'][expt_name]['color'] = self.default_plot_color
+        
+        self.window_size = pd.Timedelta(hours=HOURS_PER_DAY * days_to_smooth)
+        self.min_periods = int(
+            np.around(days_to_smooth * (HOURS_PER_DAY / self.da_cycle))
+        )        
+        
+        self.time_domain = pd.Series(
+            data = np.nan,
+            index = pd.date_range(
+                start = datetime.strptime(
+                    self.config_dict['start_date'], '%Y-%m-%d %H:%M:%S'
+                ),
+                end = datetime.strptime(
+                    self.config_dict['stop_date'], '%Y-%m-%d %H:%M:%S'
+                ),
+                freq = pd.Timedelta(hours = self.da_cycle)
+            )
+        )
+    
+    def build_timeseries(self, interactive_figure=False,
+                         da_cycle = 6., # hours
+                         days_to_smooth = 1., # days
+                         dark_theme=False):
+        self.dark_theme = dark_theme
+        self.da_cycle = da_cycle
+        self.config_figure_params(days_to_smooth=days_to_smooth)
+        
         for sensor, channel_list in self.channel_dict.items():
             if sensor in self.config_dict['sensor_list']:
                 experiment_timeseries_datetime_init=None
@@ -187,14 +270,16 @@ class GSIRadianceFit2ObsFig(object):
                     sensor,
                     init_datetime=experiment_timeseries_datetime_init,
                     interactive=interactive_figure)
-                        
+    
     def make_figures(self, sensor, ncols=3, init_datetime=None,
                      alpha_foreground=0.9,
-                     alpha_background=0.3,
+                     alpha_background=0.5,
                      interactive=False):
         output_dir = os.path.join(self.config_dict['output_path'], f"{sensor}")
-        window_size = pd.Timedelta(hours=24.*DAYS_TO_SMOOTH)
-        vbar_width = pd.Timedelta(hours=DA_CYCLE)
+        locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
+        formatter = mdates.ConciseDateFormatter(locator)
+        month_locator = mdates.MonthLocator(interval=1)
+        
         # Check if the directory exists, and create it if it doesn't
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -221,14 +306,15 @@ class GSIRadianceFit2ObsFig(object):
                 
                 if init_datetime:
                     init_ctime = init_datetime.ctime()
-                    title_str1 = f" {init_ctime} UTC]"
+                    title_str1 = f" {init_ctime}]"
                 
                 else:
                     title_str1 = "]"
                     
                 fig.suptitle(f"{title_str0}{title_str1}")
-                #axes[-1, 0].set_xlabel = 'cycle date (Gregorian)'
-                #axes[-1, 1].set_xlabel = 'cycle date (Gregorian)'
+                #axes[-1, 0].set_xlabel = 'Cycle date (Gregorian)'
+                #axes[-1, 1].set_xlabel = 'Cycle date (Gregorian)'
+                #axes[-1, 2].set_xlabel = 'Cycle date (Gregorian)'
             
                 for row, sat_sensor in enumerate(sorted(sat_set)):
                     sat_short_name = sat_sensor.split('_')[:-1][0]
@@ -240,13 +326,15 @@ class GSIRadianceFit2ObsFig(object):
                     axes[row, 2].set_title(f"{sat_label} {sensor} channel {channel_num}")
                     
                     # vertical axes labels
-                    axes[row, 0].set_ylabel('Temperature mean error (K)')
-                    axes[row, 1].set_ylabel('Temperature RMS error (K)')
+                    axes[row, 0].set_ylabel('Brightness temperature mean error (K)')
+                    axes[row, 1].set_ylabel('Brightness temperature RMS error (K)')
                     axes[row, 2].set_ylabel('Number of observations used')
                     #rejection_ratio_ax = axes[row, 2].twinx()
                     #rejection_ratio_ax.set_ylabel('Percentage of observations tossed (%)')
-                    
-                    axes[row, 0].axhline(color='black', lw=0.5)
+                    if self.dark_theme:
+                        axes[row, 0].axhline(color='#A2A4A3', lw=0.5)
+                    else:
+                        axes[row, 0].axhline(color='black', lw=0.5)
 
                     #rejection_ratio_ax.set_ylim(0, 100)
                     #rejection_ratio_ax.set_yticks(np.arange(0, 100.1, 20))                    
@@ -255,406 +343,367 @@ class GSIRadianceFit2ObsFig(object):
                     # Set ticks on both left and right vertical axes
                     axes[row, 0].tick_params(axis='y', which='both', left=True, right=True)
                     axes[row, 1].tick_params(axis='y', which='both', left=True, right=True)
+                    axes[row, 2].tick_params(axis='y', which='both', left=True, right=True)
                     
-                    axes[row, 0].tick_params(axis='x', which='both', top=True, bottom=True)
-                    axes[row, 1].tick_params(axis='x', which='both', top=True, bottom=True)
+                    axes[row, 0].tick_params(axis='x', which='both', top=True, bottom=True,
+                                             labelbottom=True)
+                    axes[row, 1].tick_params(axis='x', which='both', top=True, bottom=True,
+                                             labelbottom=True)
+                    axes[row, 2].tick_params(axis='x', which='both', top=True, bottom=True,
+                                             labelbottom=True)
                 
-                    experiment_idx = 0
+                    #experiment_idx = 0
                     for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
                         for full_stat_name, timeseries_data in timeseries_dict.items():
                             for stat_label, value_dict in timeseries_data.value_dict.items():
                                 if stat_label == f'bias_post_corr_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """ mean error plot
                                     """
-                                    bias_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
-                                    bias_values = np.array(value_dict[sat_sensor])[:,channel_idx]
-                                    std_timestamps = timeseries_dict[
-                                        f'{sensor}_std_GSIstage_{self.gsi_it}'].timestamp_dict[
-                                            f'std_GSIstage_{self.gsi_it}'][sat_sensor]
-                                    std_values = timeseries_dict[
-                                        f'{sensor}_std_GSIstage_{self.gsi_it}'].value_dict[
-                                            f'std_GSIstage_{self.gsi_it}'][sat_sensor]
-                                            
-                                    nobs_used_timestamps = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
-                                        ].timestamp_dict[f'nobs_used_GSIstage_{self.gsi_it}'
-                                            ][sat_sensor]
-                                    nobs_used_values = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
-                                        ].value_dict[f'nobs_used_GSIstage_{self.gsi_it}'
-                                            ][sat_sensor]
+                                    bias_timeseries = pd.Series(
+                                        data=np.array(
+                                            value_dict[sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_data.timestamp_dict[stat_label][sat_sensor]
+                                    ).astype(float)
                                     
-                                    use_timestamps = timeseries_dict[
-                                        f'{sensor}_use_GSIstage_None'].timestamp_dict[
-                                            'use_GSIstage_None'][sat_sensor]
-                                    use_values = timeseries_dict[
-                                        f'{sensor}_use_GSIstage_None'].value_dict[
-                                            'use_GSIstage_None'][sat_sensor]
-                                        
-                                    yerrs=list()
-                                    nobs_used_arr=list()
-                                    use_flags=list()
-                                    for time_idx, bias_timestamp in enumerate(bias_timestamps):
-                                        if bias_timestamp in std_timestamps:
-                                            std_time_idx = std_timestamps.index(bias_timestamp)
-                                            yerr = np.array(std_values)[std_time_idx, channel_idx]
-                                            
-                                            if yerr is not None:
-                                                yerrs.append(yerr)
-                                            else:
-                                                yerrs.append(np.nan)
-                                        else:
-                                            yerrs.append(np.nan)
-                                        
-                                        if bias_timestamp in nobs_used_timestamps:
-                                            nobs_used_time_idx = nobs_used_timestamps.index(bias_timestamp)
-                                            nobs_used_channel = np.array(nobs_used_values)[nobs_used_time_idx, channel_idx]
-                                            
-                                            if nobs_used_channel is not None:
-                                                nobs_used_arr.append(nobs_used_channel)
-                                            else:
-                                                nobs_used_arr.append(np.nan)
-                                        else:
-                                            nobs_used_arr.append(np.nan)
-                                        
-                                        if bias_timestamp in use_timestamps:
-                                            use_time_idx = use_timestamps.index(bias_timestamp)
-                                            use_flag = np.array(use_values)[use_time_idx, channel_idx]
-                                            
-                                            if use_flag is not None:
-                                                use_flags.append(use_flag)
-                                            else:
-                                                use_flags.append(np.nan)
-                                        else:
-                                            use_flags.append(np.nan)
-                                            
-                                    #use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
-                                    mean_values_plot = np.array([np.nan if x is None else float(x) for x in bias_values])
-                                    #yerrs_plot = np.array([np.nan if x is None else float(x) for x in yerrs])
-                                    #nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_arr])
-                                    standard_errs = np.array(yerrs) / np.sqrt(nobs_used_arr)
+                                    std_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[f'{sensor}_std_GSIstage_{self.gsi_it}'].value_dict[
+                                                f'std_GSIstage_{self.gsi_it}'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_std_GSIstage_{self.gsi_it}'].timestamp_dict[
+                                            f'std_GSIstage_{self.gsi_it}'][sat_sensor]
+                                    ).astype(float)
+                                    
+                                    nobs_used_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'].value_dict[
+                                                f'nobs_used_GSIstage_{self.gsi_it}'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'].timestamp_dict[
+                                            f'nobs_used_GSIstage_{self.gsi_it}'][sat_sensor]
+                                    ).astype(float)
+                                    
+                                    use_flag_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[
+                                                f'{sensor}_use_GSIstage_None'].value_dict[
+                                                    'use_GSIstage_None'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_use_GSIstage_None'].timestamp_dict[
+                                                'use_GSIstage_None'][sat_sensor]
+                                    ).astype(float)
 
-                                    mean_values_smooth = pd.Series(
-                                        np.ma.masked_where(
-                                            np.array(use_flags) < 1,
-                                            mean_values_plot),
-                                        index=bias_timestamps).rolling(
-                                            window=window_size,
-                                            min_periods=1,
-                                            center=True,
-                                            #win_type='triang'
-                                        ).mean()
-                                    
-                                    #standard_errs_times_2 = 2.*standard_errs
-                                    yerr_bot = mean_values_plot - standard_errs
-                                    yerr_top = mean_values_plot + standard_errs
-                                    
-                                    '''
-                                    axes[row, 0].bar(
-                                        bias_timestamps,
-                                        use_flags_plot_mask,
-                                        width=vbar_width,
-                                        bottom=-15,
-                                        color=self.config_dict['color_list'][experiment_idx],
-                                        alpha=0.5*alpha_background
+                                    standard_errs = std_timeseries / np.sqrt(nobs_used_timeseries)
+
+                                    bias_timeseries = bias_timeseries.combine_first(
+                                        self.time_domain
                                     )
-                                    '''
+                                    use_flag_timeseries = use_flag_timeseries.combine_first(
+                                        self.time_domain
+                                    )
+                                    
+                                    mean_values_smooth = bias_timeseries.rolling(
+                                        window=self.window_size,
+                                        min_periods=self.min_periods,
+                                        center=True,
+                                        #win_type='triang'
+                                    ).mean()
+                                    
+                                    yerr_bot = (
+                                        bias_timeseries - standard_errs
+                                    ).combine_first(self.time_domain)
+                                    yerr_top = (
+                                        bias_timeseries + standard_errs
+                                    ).combine_first(self.time_domain)
+                                    
                                     axes[row, 0].fill_between(
-                                        bias_timestamps,
-                                        yerr_top,
-                                        y2=yerr_bot,
-                                        width=vbar_width,
-                                        bottom=yerr_bot,
-                                        color=self.config_dict['color_list'][experiment_idx],
-                                        alpha=alpha_background
+                                        yerr_bot.index,
+                                        yerr_top.values,
+                                        y2=yerr_bot.values,
+                                        lw=0,
+                                        edgecolor='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=alpha_background,
+                                        zorder=2
                                     )
                                 
                                     '''
-                                    axes[row, 0].barh(np.clip(mean_values_plot,
-                                                              YMIN,
-                                                              YMAX),
-                                                      pd.Timedelta(hours=2),
-                                                      height=0.1,
-                                                      left=bias_timestamps - pd.Timedelta(hours=1),
-                                                      color=self.config_dict['color_list'][experiment_idx],
-                                                      alpha = 1.0)
-                                    '''
                                     axes[row, 0].plot(
-                                        bias_timestamps,
-                                        mean_values_plot,
+                                        bias_timeseries.index,
+                                        bias_timeseries.values,
                                         marker='none',
-                                        color=self.config_dict['color_list'][experiment_idx],
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
                                         alpha=alpha_background,
                                         lw=0.5,
                                         ls='-',
                                     )
+                                    '''
+                                    
                                     axes[row, 0].plot(
-                                        bias_timestamps,
-                                        mean_values_smooth,
+                                        mean_values_smooth.index,
+                                        mean_values_smooth.where(
+                                            use_flag_timeseries < 1
+                                        ).values,
                                         marker='none',
-                                        color=self.config_dict['color_list'][experiment_idx],
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
                                         alpha=alpha_foreground,
-                                        lw=self.config_dict['lw_list'][experiment_idx],
-                                        ls=self.config_dict['ls_list'][experiment_idx],
-                                        label=self.friendly_names_dict[experiment]
+                                        lw=self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=':',
+                                       zorder=3, #label=self.friendly_names_dict[experiment]
                                     )
-                                    '''
-                                    axes[row, 0].errorbar(
-                                        bias_timestamps,
-                                        np.clip(mean_values_plot, YMIN, YMAX),
-                                        xerr=pd.Timedelta(hours=3),
-                         fmt='none',#self.config_dict['ls_list'][experiment_idx],
-                        #lw=self.config_dict['lw_list'][experiment_idx],
-                        elinewidth=self.config_dict['lw_list'][experiment_idx],
-                                        color=self.config_dict['color_list'][experiment_idx],
-                                        alpha = 1.0,
+                                    
+                                    axes[row, 0].plot(
+                                        mean_values_smooth.index,
+                                        mean_values_smooth.where(
+                                            use_flag_timeseries > 0
+                                        ).values,
+                                        marker='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=1.0,
+                                        lw=4.*self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=self.config_dict['experiment_plot_dict']
+                                            [experiment]['ls'],
+                                        label=self.friendly_names_dict[experiment],
+                                        zorder=3
                                     )
-                                    '''
-                                    axes[row,0].legend(loc='lower right')
+
+                                    axes[row,0].legend(loc='upper right')
                             
                                 elif stat_label == f'sqrt_bias_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """RMS error plot
                                     """
-                                    rmse_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
-                                    rmse_values = np.array(value_dict[sat_sensor])[:,channel_idx]
-                                    obs_err_var_timestamps = timeseries_dict[
-                                        f'{sensor}_variance_GSIstage_{self.gsi_it}'].timestamp_dict[
+                                    rmse_timeseries = pd.Series(
+                                        data=np.array(
+                                            value_dict[sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_data.timestamp_dict[stat_label][sat_sensor]
+                                    ).astype(float)
+                                    
+                                    obs_err_var_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[f'{sensor}_variance_GSIstage_{self.gsi_it}'].value_dict[
+                                                f'variance_GSIstage_{self.gsi_it}'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_variance_GSIstage_{self.gsi_it}'].timestamp_dict[
                                             f'variance_GSIstage_{self.gsi_it}'][sat_sensor]
-                                    obs_err_var_values = timeseries_dict[
-                                        f'{sensor}_variance_GSIstage_{self.gsi_it}'].value_dict[
-                                            f'variance_GSIstage_{self.gsi_it}'][sat_sensor]
-                                    use_timestamps = timeseries_dict[
-                                        f'{sensor}_use_GSIstage_None'].timestamp_dict[
-                                            'use_GSIstage_None'][sat_sensor]
-                                    use_values = timeseries_dict[
-                                        f'{sensor}_use_GSIstage_None'].value_dict[
-                                            'use_GSIstage_None'][sat_sensor]
-                                        
-                                    yerrs2=list()
-                                    use_flags=list()
-                                    for time_idx, rmse_timestamp in enumerate(rmse_timestamps):
-                                        if rmse_timestamp in obs_err_var_timestamps:
-                                            obs_err_var_time_idx = obs_err_var_timestamps.index(rmse_timestamp)
-                                            yerr2 = np.array(obs_err_var_values)[obs_err_var_time_idx, channel_idx]
-                                            
-                                            if yerr2 is not None:
-                                                yerrs2.append(yerr2)
-                                            else:
-                                                yerrs2.append(np.nan)
-                                        else:
-                                            yerrs2.append(np.nan)
-                                            
-                                        if rmse_timestamp in use_timestamps:
-                                            use_time_idx = use_timestamps.index(rmse_timestamp)
-                                            use_flag = np.array(use_values)[use_time_idx, channel_idx]
-                                            
-                                            if use_flag is not None:
-                                                use_flags.append(use_flag)
-                                            else:
-                                                use_flags.append(np.nan)
-                                        else:
-                                            use_flags.append(np.nan)
-                                
-                                    #yerrs_plot = np.sqrt(np.array([np.nan if x is None else float(x) for x in yerrs2]))
-                                    #use_flags_plot = np.array([np.nan if x is None else float(x) for x in use_flags])
-                                    max_yerr = np.max(np.nan_to_num(np.sqrt(yerrs2)), initial=max_yerr)
-                                    rmse_values_plot = np.array([np.nan if x is None else float(x) for x in rmse_values])
-                                    rmse_values_smooth = pd.Series(
-                                        np.ma.masked_where(
-                                            np.array(use_flags) < 1,
-                                            rmse_values_plot),
-                                        index=rmse_timestamps).rolling(
-                                            window=window_size,
-                                            min_periods=1,
-                                            center=True,
-                                            #win_type='triang'
-                                        ).mean()
-                                
-                                    '''
-                                    axes[row, 1].bar(
-                                        rmse_timestamps,
-                                        np.ma.masked_where(use_flags_plot < 1, 2.*yerrs_plot),
-                                        width=pd.Timedelta(hours=DA_CYCLE),
-                                        bottom=rmse_values_plot - yerrs_plot,
-                                        color=self.config_dict['color_list'][experiment_idx],
-                                        alpha=alpha_background
+                                    ).astype(float)
+                                    
+                                    use_flag_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[
+                                                f'{sensor}_use_GSIstage_None'].value_dict[
+                                                    'use_GSIstage_None'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_use_GSIstage_None'].timestamp_dict[
+                                                'use_GSIstage_None'][sat_sensor]
+                                    ).astype(float)
+
+                                    max_yerr = np.max(
+                                        np.nan_to_num(
+                                            np.sqrt(obs_err_var_timeseries.values)
+                                        ),
+                                        initial=max_yerr
                                     )
                                     
-                                    
-                                    axes[row, 1].bar(
-                                        rmse_timestamps,
-                                        use_flags_plot_mask,
-                                        width=vbar_width,
-                                        bottom=0,
-                                        color=self.config_dict['color_list'][experiment_idx],
-                                        alpha=0.5*alpha_background
+                                    rmse_timeseries = rmse_timeseries.combine_first(
+                                        self.time_domain
                                     )
-                                    '''
+                                    use_flag_timeseries = use_flag_timeseries.combine_first(
+                                        self.time_domain
+                                    )
+                                    
+                                    rmse_values_smooth = rmse_timeseries.rolling(
+                                        window=self.window_size,
+                                        min_periods=self.min_periods,
+                                        center=True,
+                                        #win_type='triang'
+                                    ).mean()
+                                
                                     axes[row, 1].plot(
-                                        rmse_timestamps,
-                                        rmse_values_plot,
+                                        rmse_timeseries.index,
+                                        rmse_timeseries.values,
                                         marker='none',
-                                        color=self.config_dict['color_list'][experiment_idx],
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
                                         alpha=alpha_background,
                                         lw=0.5,
                                         ls='-',
-                                        #xerr=pd.Timedelta(hours=3),
-                 #fmt='none',#,self.config_dict['ls_list'][experiment_idx],
-                    #lw=self.config_dict['lw_list'][experiment_idx],
-                    #elinewidth=self.config_dict['lw_list'][experiment_idx],
+                                        zorder=2
                                     )
+                                    
                                     axes[row, 1].plot(
-                                        rmse_timestamps,
-                                        rmse_values_smooth,
+                                        rmse_values_smooth.index,
+                                        rmse_values_smooth.where(
+                                            use_flag_timeseries < 1
+                                        ).values,
                                         marker='none',
-                                        color=self.config_dict['color_list'][experiment_idx],
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
                                         alpha=alpha_foreground,
-                                        lw=self.config_dict['lw_list'][experiment_idx],
-                                        ls=self.config_dict['ls_list'][experiment_idx],
-                                        label=self.friendly_names_dict[experiment],
+                                        lw=self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=':',
+                                        zorder=3
+                                        #label=self.friendly_names_dict[experiment],
                                     )
-                                    axes[row,1].legend(loc='lower right')
+                                    
+                                    axes[row, 1].plot(
+                                        rmse_values_smooth.index,
+                                        rmse_values_smooth.where(
+                                            use_flag_timeseries > 0
+                                        ),
+                                        marker='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=1.0,
+                                        lw=4.*self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=self.config_dict['experiment_plot_dict']
+                                            [experiment]['ls'],
+                                        label=self.friendly_names_dict[experiment],
+                                        zorder=3
+                                    )
+                                    
+                                    #axes[row,1].legend(loc='lower right')
                             
                                 elif stat_label == f'nobs_used_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """ nobs tossed and rejection ratio plot
                                     """
-                                    nobs_used_timestamps = timeseries_data.timestamp_dict[stat_label][sat_sensor]
-                                    nobs_used_values = np.array(value_dict[sat_sensor])[:,channel_idx]
-                                    '''
-                                    nobs_used_timestamps = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
-                                        ].timestamp_dict[f'nobs_used_GSIstage_{self.gsi_it}'
-                                            ][sat_sensor]
-                                    nobs_used_values = timeseries_dict[
-                                        f'{sensor}_nobs_used_GSIstage_{self.gsi_it}'
-                                        ].value_dict[f'nobs_used_GSIstage_{self.gsi_it}'
-                                            ][sat_sensor]
-                                    '''
-                                    use_timestamps = timeseries_dict[
-                                        f'{sensor}_use_GSIstage_None'].timestamp_dict[
-                                            'use_GSIstage_None'][sat_sensor]
-                                    use_values = timeseries_dict[
-                                        f'{sensor}_use_GSIstage_None'].value_dict[
-                                            'use_GSIstage_None'][sat_sensor]
-                                    
-                                    #nobs_used_arr=list()
-                                    #nobs_tossed_arr = list()
-                                    use_flags=list()
-                                    
-                                    for time_idx, nobs_use_timestamp in enumerate(nobs_used_timestamps):
-                                        if nobs_use_timestamp in use_timestamps:
-                                            use_time_idx = use_timestamps.index(nobs_use_timestamp)
-                                            use_flag = np.array(use_values)[use_time_idx, channel_idx]
-                                            
-                                            if use_flag is not None:
-                                                use_flags.append(use_flag)
-                                            else:
-                                                use_flags.append(np.nan)
-                                        else:
-                                            use_flags.append(np.nan)
-          
-                                    
-                                    #nobs_tossed_plot = np.array([np.nan if x is None else float(x) for x in nobs_tossed_values])
-                                    
-                                    nobs_used_plot = np.array([np.nan if x is None else float(x) for x in nobs_used_values])
-                                    '''
-                                    rejection_percent = (100.*nobs_tossed_plot) / (
-                                        nobs_used_plot + nobs_tossed_plot)
-                                    ''' 
+                                    nobs_used_timeseries = pd.Series(
+                                        data=np.array(
+                                            value_dict[sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_data.timestamp_dict[stat_label][sat_sensor]
+                                    ).astype(float)
 
-                                    nobs_used_smooth = pd.Series(
-                                        np.ma.masked_where(
-                                            np.array(use_flags) < 1,
-                                            nobs_used_plot),
-                                        index=nobs_used_timestamps).rolling(
-                                            window=window_size,
-                                            min_periods=1,
-                                            center=True,
-                                            #win_type='triang'
-                                        ).mean()
-                                    '''
-                                    axes[row, 2].bar(
-                                                nobs_tossed_timestamps,
-                                                nobs_tossed_plot,
-                                                width=pd.Timedelta(hours=DA_CYCLE),
-                                                color=self.config_dict['color_list'][experiment_idx],
-                                                alpha=alpha_background,
-                                                label=f"n tossed ({self.friendly_names_dict[experiment]})"
-                                            )
-                                
-                                    rejection_ratio_ax.plot(
-                                                nobs_tossed_timestamps,
-                                                rejection_percent,
-                                                marker='none',
-                                                color=self.config_dict['color_list'][experiment_idx],
-                                                alpha=alpha_foreground,
-                                                lw=self.config_dict['lw_list'][experiment_idx],
-                                                ls=self.config_dict['ls_list'][experiment_idx],
-                                                label=f"{self.friendly_names_dict[experiment]}"
-                                            )
-                                    '''
+                                    use_flag_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[
+                                                f'{sensor}_use_GSIstage_None'].value_dict[
+                                                    'use_GSIstage_None'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_use_GSIstage_None'].timestamp_dict[
+                                                'use_GSIstage_None'][sat_sensor]
+                                    ).astype(float)
+
+                                    nobs_used_timeseries = nobs_used_timeseries.combine_first(
+                                        self.time_domain
+                                    )
+                                    
+                                    use_flag_timeseries = use_flag_timeseries.combine_first(
+                                        self.time_domain
+                                    )
+                                    
+                                    nobs_used_smooth = nobs_used_timeseries.rolling(
+                                        window=self.window_size,
+                                        min_periods=self.min_periods,
+                                        center=True,
+                                        #win_type='triang'
+                                    ).mean()
+                                    
                                     axes[row, 2].plot(
-                                        nobs_used_timestamps,
-                                        nobs_used_plot,
+                                        nobs_used_timeseries.index,
+                                        nobs_used_timeseries.values,
                                         marker='none',
-                                        color=self.config_dict['color_list'][experiment_idx],
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
                                         alpha=alpha_background,
                                         lw=0.5,
                                         ls='-',
+                                        zorder=2
                                     )
                                     
                                     axes[row, 2].plot(
-                                        nobs_used_timestamps,
-                                        nobs_used_smooth,
+                                        nobs_used_smooth.index,
+                                        nobs_used_smooth.where(
+                                            use_flag_timeseries < 1
+                                        ).values,
                                         marker='none',
-                                        color=self.config_dict['color_list'][experiment_idx],
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
                                         alpha=alpha_foreground,
-                                        lw=self.config_dict['lw_list'][experiment_idx],
-                                        ls=self.config_dict['ls_list'][experiment_idx],
-                                        label=f"{self.friendly_names_dict[experiment]}"
+                                        lw=self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=':',
+                                        zorder=3
+                                        #label=f"{self.friendly_names_dict[experiment]}"
                                     )
-                                    axes[row,2].legend(loc='lower right')
+                                    
+                                    axes[row, 2].plot(
+                                        nobs_used_smooth.index,
+                                        nobs_used_smooth.where(
+                                            use_flag_timeseries > 0
+                                        ).values,
+                                        marker='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=1.0,
+                                        lw=4.*self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=self.config_dict['experiment_plot_dict']
+                                            [experiment]['ls'],
+                                        label=f"{self.friendly_names_dict[experiment]}",
+                                        zorder=3
+                                    )
+                                    
+                                    #axes[row,2].legend(loc='lower right')
                                     #rejection_ratio_ax.legend(loc='upper right')
 
-                                axes[row, 0].xaxis.set_major_formatter(
-                                    mdates.ConciseDateFormatter(
-                                              axes[row, 0].xaxis.get_major_locator()))
-                                axes[row, 1].xaxis.set_major_formatter(
-                                    mdates.ConciseDateFormatter(
-                                              axes[row, 1].xaxis.get_major_locator()))
-                                axes[row, 2].xaxis.set_major_formatter(
-                                    mdates.ConciseDateFormatter(
-                                              axes[row, 2].xaxis.get_major_locator()))
+                                for col_idx in range(ncols):
+                                    if self.dark_theme:
+                                        axes[row, col_idx].grid(True)
+                                    axes[row, col_idx].xaxis.set_major_locator(locator)
+                                    axes[row, col_idx].xaxis.set_major_formatter(formatter)
+                                    axes[row, col_idx].xaxis.set_minor_locator(month_locator)
                                           
-                        experiment_idx += 1
+                        #experiment_idx += 1
                 
                 for row, sat_sensor in enumerate(sorted(sat_set)):
                     # set ylim, ticks
-                    axes[row, 0].set_yticks(
-                        np.arange(np.around(-1.5 * max_yerr - 0.2, decimals=1),
-                                  1.5 * max_yerr + 0.2,
-                                  0.1),
-                        minor=True
+                    if max_yerr < 1:
+                        axes[row, 0].set_yticks(
+                            np.arange(np.around(-0.5 * max_yerr - 0.2, decimals=1),
+                                      0.5 * max_yerr + 0.2,
+                                      0.1),
+                        )
+                    else:
+                        axes[row, 0].set_yticks(
+                            np.arange(np.around(-0.5 * max_yerr - 1),
+                                      0.5 * max_yerr + 1,
+                                      0.5),
+                        )
+                        axes[row, 0].set_yticks(
+                            np.arange(np.around(-0.5 * max_yerr - 0.2, decimals=1),
+                                      0.5 * max_yerr + 0.2,
+                                      0.1),
+                                      minor=True
                     )
                     
                     axes[row, 1].set_yticks(
                         np.arange(0, 3. * max_yerr + 0.1, 0.1),
                         minor=True
                     )
-
-                    axes[row, 0].set_yticks(
-                        np.arange(np.around(-1.5 * max_yerr - 1),
-                                  1.5*max_yerr + 1,
-                                  0.5)
-                    )
                     
                     axes[row, 1].set_yticks(
                         np.arange(0, 3. * max_yerr + 1, 0.5)
                     )
                     
-                    axes[row, 0].set_ylim(-1.0*max_yerr, 1.0*max_yerr)
-                    axes[row, 1].set_ylim(0, 2.*max_yerr)
+                    axes[row, 0].set_ylim(-0.5*max_yerr, 0.5*max_yerr)
+                    axes[row, 1].set_ylim(0, 3.*max_yerr)
+                    
+                    nobs_ylims = axes[row, 2].get_ylim()
+                    if nobs_ylims[0] < 0:
+                        axes[row, 2].set_ylim(bottom=0)
                 
+                plt.tight_layout()
+                plt.subplots_adjust(top=0.96)
                 if interactive:
                     plt.show()
                 else:
@@ -770,7 +819,10 @@ def prun(sensor_list=None):
             if args.channel != 9999:
                 experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
-            experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive)
+            experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
+                                                                days_to_smooth=args.days_to_smooth,
+                                                                da_cycle=args.da_cycle,
+                                                                dark_theme=args.dark_theme)
 
 def main():
     """
