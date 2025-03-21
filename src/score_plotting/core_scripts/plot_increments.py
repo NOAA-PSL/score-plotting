@@ -43,7 +43,7 @@ def parse_arguments():
         '--dark_theme', 
         action='store_true',  # If this argument is provided, dark_theme will be True
         help="Enable dark theme (default is False)"
-)
+    )
     
     args = parser.parse_args()
 
@@ -414,7 +414,7 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     
     values_smooth = values_timeseries.rolling(
                         window=window_size,
-                        min_periods=1,
+                        min_periods=int(np.around(args.days_to_smooth)),
                         center=True).mean()
     
     plt.plot(values_smooth.index,
