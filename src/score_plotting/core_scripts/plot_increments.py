@@ -5,6 +5,7 @@ Collection of methods to facilitate handling of score db requests
 """
 import os
 import pathlib
+import argparse
 from dataclasses import dataclass, field
 from collections import namedtuple
 from datetime import datetime
@@ -14,18 +15,39 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
 
 from score_db.expt_metrics import ExptMetricRequest
 from score_plotting.attrs.increments_plot_attrs import plot_attrs
 from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
-# figure output directory
-WORK_DIR = os.path.join('/', 'contrib', 'shared', 'replay', 'results')
+HOURS_PER_DAY = 24. # hours
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    
+    # Add DA cycle as an argument (optional, default to 6.0)
+    parser.add_argument('--da_cycle', type=float, default=6.,
+                        help='The DA cycle duration in hours (default: 6.0)')
+    
+    # Add days to smooth as an argument (optional, default to 8.0)
+    parser.add_argument('--days_to_smooth', type=float, default=8.,
+                        help='Number of days to smooth (default: 8.0)')
+    
+    # Make figure_output_path optional (defaults to $HOME)
+    parser.add_argument('figure_output_path', type=str, nargs='?',
+                        default=pathlib.Path.home(),
+                        help='Path to where figures will be saved')
+    
+    args = parser.parse_args()
+
+    return args
 
 RequestData = namedtuple('RequestData', ['datetime_str', 'experiment',
                                          'metric_format_str', 'metric',
                                          'stat',
                                          'time_valid'],)
+
 plot_control_dict1 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '1999-01-01 00:00:00',
                                     'start': '1994-01-01 00:00:00'},
@@ -47,7 +69,7 @@ plot_control_dict1 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                                   'delz_inc'],
                                       'stat_group_frmt_str':
                                       'metric_type_{stat}_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict2 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2005-01-01 00:00:00',
                                     'start': '1999-01-01 00:00:00'},
@@ -69,7 +91,7 @@ plot_control_dict2 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                                   'delz_inc'],
                                       'stat_group_frmt_str':
                                       'metric_type_{stat}_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict3 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2010-01-01 00:00:00',
                                     'start': '2005-01-01 00:00:00'},
@@ -90,7 +112,7 @@ plot_control_dict3 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                                   'delz_inc'],
                                       'stat_group_frmt_str':
                                       'metric_type_{stat}_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict4 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2015-01-01 00:00:00',
                                     'start': '2010-01-01 00:00:00'},
@@ -111,7 +133,7 @@ plot_control_dict4 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                                   'delz_inc'],
                                       'stat_group_frmt_str':
                                       'metric_type_{stat}_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict5 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2020-01-01 00:00:00',
                                     'start': '2015-01-01 00:00:00'},
@@ -132,7 +154,7 @@ plot_control_dict5 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                                   'delz_inc'],
                                       'stat_group_frmt_str':
                                       'metric_type_{stat}_{metric}'}],
-                     'work_dir': WORK_DIR}
+                     'work_dir': parse_arguments().figure_output_path}
 plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2024-01-01 00:00:00',
                                     'start': '2020-01-01 00:00:00'},
@@ -153,11 +175,29 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                                   'delz_inc'],
                                       'stat_group_frmt_str':
                                       'metric_type_{stat}_{metric}'}],
-                     'work_dir': WORK_DIR}
-
-def unique(sequence):
-    seen = set()
-    return [x for x in sequence if not (x in seen or seen.add(x))]
+                     'work_dir': parse_arguments().figure_output_path}
+                     
+plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+                                    'start': '2020-10-01 00:00:00',
+                                    'end': '2025-09-30 00:00:00'},
+                     'db_request_name': 'expt_metrics',
+                     'method': 'GET',
+                     'experiments': [{'graph_color': 'black',
+                                      'graph_label': 'increments',
+                                      'name': 'ufs_replay_ext',
+                                      'wallclock_start': '2024-10-01 00:00:00'}],
+                     'fig_base_fn': 'increment',
+                     'stat_groups': [{'cycles': [0, 21600, 43200, 64800],
+                                      'stats': ['mean', 'RMS'],
+                                      'metrics': ['pt_inc', 's_inc','u_inc_ocn',
+                                                  'v_inc_ocn', 'u_inc_atm','v_inc_atm',
+                                                  'SSH', 'Salinity', 'Temperature',
+                                                  'Speed of Currents', 'o3mr_inc',
+                                                  'sphum_inc', 'T_inc', 'delp_inc',
+                                                  'delz_inc'],
+                                      'stat_group_frmt_str':
+                                      'metric_type_{stat}_{metric}'}],
+                     'work_dir': parse_arguments().figure_output_path}
 
 def get_experiment_increments(request_data):
     
@@ -210,14 +250,15 @@ def build_base_figure():
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     plt.tick_params(axis='x', which='both', bottom=True, top=False,
-                    labelbottom=True, labelsize=3)
+                    labelbottom=True)
     
     return(fig, ax)
 
 def format_figure(ax, pa):
-    ax.set_xlim([pd.Timestamp(plot_control_dict['date_range']['start']).timestamp(),
-                 pd.Timestamp(plot_control_dict['date_range']['end']).timestamp()])
+    ax.set_xlim([pd.Timestamp(plot_control_dict['date_range']['start']),
+                 pd.Timestamp(plot_control_dict['date_range']['end'])])
     ax.set_ylim([pa.axes_attrs.ymin, pa.axes_attrs.ymax])
+    
     plt.xlabel(xlabel=pa.xlabel.label,
                horizontalalignment=pa.xlabel.horizontalalignment)
     
@@ -231,14 +272,22 @@ def format_figure(ax, pa):
                shadow=pa.legend.shadow,
                facecolor=pa.legend.facecolor)
 
-def build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range):
+def build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range,
+                   experiment_name=None, append_date_range=False):
     
     start = datetime.strftime(date_range.start, '%Y%m%dT%HZ')
     end = datetime.strftime(date_range.end, '%Y%m%dT%HZ')
     dest_fn = fig_base_fn
-    dest_fn += f'_{stat}_{metric}_{start}_to_{end}.png'
     
-    dest_full_path = os.path.join(work_dir, dest_fn)
+    if append_date_range:
+        dest_fn += f'_{stat}_{metric}_{start}_to_{end}.png'
+    else:
+        dest_fn += f'_{stat}_{metric}.png'
+    
+    if experiment_name is not None:
+        dest_full_path = os.path.join(work_dir, experiment_name, dest_fn)
+    else:
+        dest_full_path = os.path.join(work_dir, dest_fn)
     
     parent_dir = pathlib.Path(dest_full_path).parent
     pathlib.Path(parent_dir).mkdir(parents=True, exist_ok=True)
@@ -251,6 +300,17 @@ def save_figure(dest_full_path):
 
 def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn,
                      date_range):
+    args = parse_arguments()
+    
+    time_domain = pd.Series(
+        data = np.nan,
+        index = pd.date_range(
+            start = date_range.start,
+            end = date_range.end,
+            freq = pd.Timedelta(hours=args.da_cycle)
+        )
+    )
+    window_size = pd.Timedelta(hours=HOURS_PER_DAY * args.days_to_smooth)
 
     if not isinstance(metrics_df, DataFrame):
         msg = 'Input data to plot_increments must be type pandas.DataFrame '\
@@ -260,6 +320,7 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     plt_attr_key = 'increment'
     pa = plot_attrs[plt_attr_key]
     (fig, ax) = build_base_figure()
+    ax.axhline(color='black', lw=0.75)
 
     metrics_to_show = metrics_df.drop_duplicates(subset='time_valid', keep='last')
     expt_name = experiments[0]['name']['exact']
@@ -277,12 +338,15 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     for row in metrics_to_show.itertuples():
         if row.time_valid >= date_range.start and row.time_valid < date_range.end:
             values.append(row.value)
-            timestamps.append(row.time_valid.timestamp())
+            timestamps.append(row.time_valid)
+            '''
             labels.append('%02d-%02d-%04d' % (row.time_valid.month,
                                               row.time_valid.day,
                                               row.time_valid.year,
                                           ))
+            '''
             cycle_labels.append('%dZ' % row.time_valid.hour)
+            
             if row.time_valid.hour == 0:
                 colors.append('lightcoral')
             elif row.time_valid.hour == 6:
@@ -291,45 +355,75 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
                 colors.append('skyblue')
             elif row.time_valid.hour == 18:
                 colors.append('orchid')
+            else:
+                colors.append('black')
 
-    myLabel = unique(cycle_labels) 
+    myLabel = set(cycle_labels)
 
-    plt.bar(timestamps, values,
-            alpha=0.333,
-            width=21600.,
-            color=colors)
-
-    length = len(myLabel)
-
-    for i in range(length):
+    for i in range(len(myLabel)):
         """ Plot the first unique cycles to format the legend
         """
-        plt.scatter(timestamps[i], values[i], ls='None', marker='|',
-             color=colors[i], alpha=0.333, label=cycle_labels[i])
+        plt.scatter(timestamps[i], values[i], #s=1,
+                c=colors[i], marker='|',
+                alpha=0.9, label=cycle_labels[i],
+                linewidths=0.5, edgecolors='none')
+    
+    
     # proceed with onward
-    plt.scatter(timestamps, values, ls='None', marker='|',
-             color=colors, alpha=0.333)
+    plt.scatter(timestamps[len(myLabel):], values[len(myLabel):], #s=1,
+                c=colors[len(myLabel):], marker='|', alpha=0.9,
+                linewidths=0.5, edgecolors='none')
+    
+    values_timeseries = pd.Series(
+        data = values,
+        index = timestamps
+    ).combine_first(time_domain)
+    
+    plt.fill_between(
+        values_timeseries.index,
+        np.nan_to_num(values_timeseries.values),
+        interpolate=True,
+        step='mid',
+        edgecolor='none',
+        lw=0,
+        color='black',
+        alpha=0.2
+    )
+    
+    values_smooth = values_timeseries.rolling(
+                        window=window_size,
+                        min_periods=1,
+                        center=True).mean()
+    
+    plt.plot(values_smooth.index,
+             values_smooth.values,
+             ls='-',
+             marker='none',
+             color='black',
+             alpha=0.9,
+             lw=1.5,
+             label=f'{int(args.days_to_smooth)} day SMA')
+    
     format_figure(ax, pa)
+    if stat == 'RMS':
+        ax.set_ylim(0, None)
 
     plt.title(stat+" "+metric+" " +expt_name, loc = "left")
     today = date.today()
     plt.title(today, loc = "right")
   
     plt.ylabel(expt_graph_label+" ("+row.metric_unit+")")
+    
+    locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
+    month_locator = mdates.MonthLocator()
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(formatter)
+    ax.xaxis.set_minor_locator(month_locator)
+    
+    fig_fn = build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range,
+                            experiment_name=expt_name)
 
-    fig_fn = build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range)
-
-    #create timestamps that are inorder for entire timeline (not limited to 1 year)
-    timestamps_int = [int(timestamps) for timestamps in timestamps]
-    all_monthly_labels = [datetime.fromtimestamp(timestamps_int).strftime('%m-%Y') for timestamps_int in timestamps_int]
-
-    monthly_labels = unique(all_monthly_labels) 
-    plt.xticks(ticks=np.arange(sorted(timestamps)[0],
-                               sorted(timestamps)[-1],
-                               60*60*24*(365.25/12.))[:len(monthly_labels)],
-               labels=monthly_labels, rotation=45,ha='right',
-               )
-    plt.subplots_adjust(bottom=0.22)
     save_figure(fig_fn)
 
 @dataclass
@@ -374,11 +468,16 @@ class PlotIncrementRequest(PlotInnovStatsRequest):
                             self.date_range)
 
 if __name__=='__main__':
-    for i, plot_control_dict in enumerate([plot_control_dict1,
-                                           plot_control_dict2,
-                                           plot_control_dict3,
-                                           plot_control_dict4,
-                                           plot_control_dict5,
-                                           plot_control_dict6]):
+    style_file_path = os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
+                                   'style_lib', 'half_horizontal.mplstyle')
+    plt.style.use(style_file_path)
+    
+    for i, plot_control_dict in enumerate([#plot_control_dict1,
+                                           #plot_control_dict2,
+                                           #plot_control_dict3,
+                                           #plot_control_dict4,
+                                           #plot_control_dict5,
+                                           #plot_control_dict6
+                                           plot_control_dict_ext]):
         plot_request = PlotIncrementRequest(plot_control_dict)
         plot_request.submit()
