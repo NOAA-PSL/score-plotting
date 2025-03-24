@@ -494,7 +494,7 @@ class PlotIncrementRequest(PlotInnovStatsRequest):
 if __name__=='__main__':
     args = parse_arguments()
     if args.dark_theme:
-        style_file = 'darrmonitor.mplstyle'
+        style_file = 'dark_theme.mplstyle'
     else:
         style_file = 'half_horizontal.mplstyle'
     
