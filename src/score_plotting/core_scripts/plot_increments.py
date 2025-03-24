@@ -448,6 +448,7 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
                             experiment_name=expt_name)
 
     save_figure(fig_fn)
+    plt.close()
 
 @dataclass
 class PlotIncrementRequest(PlotInnovStatsRequest):
