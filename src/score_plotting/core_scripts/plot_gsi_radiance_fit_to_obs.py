@@ -30,7 +30,7 @@ def config():
     """
     args = parse_arguments()
     if args.dark_theme:
-        mpl_style_sheet = 'darrmonitor.mplstyle'
+        mpl_style_sheet = 'dark_theme.mplstyle'
     else:
         mpl_style_sheet = 'full_3x3pg.mplstyle'
         
