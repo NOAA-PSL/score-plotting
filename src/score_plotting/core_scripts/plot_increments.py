@@ -38,6 +38,12 @@ def parse_arguments():
     parser.add_argument('figure_output_path', type=str, nargs='?',
                         default=pathlib.Path.home(),
                         help='Path to where figures will be saved')
+                        
+    parser.add_argument(
+        '--dark_theme', 
+        action='store_true',  # If this argument is provided, dark_theme will be True
+        help="Enable dark theme (default is False)"
+    )
     
     args = parser.parse_args()
 
@@ -302,6 +308,13 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
                      date_range):
     args = parse_arguments()
     
+    if args.dark_theme:
+        default_plot_color = '#CFB87C'
+        fill_color = '#565A5C'
+    else:
+        default_plot_color = 'black'
+        fill_color = '#A2A4A3'
+    
     time_domain = pd.Series(
         data = np.nan,
         index = pd.date_range(
@@ -320,7 +333,11 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     plt_attr_key = 'increment'
     pa = plot_attrs[plt_attr_key]
     (fig, ax) = build_base_figure()
-    ax.axhline(color='black', lw=0.75)
+    
+    if args.dark_theme:
+        ax.axhline(color='#A2A4A3', lw=0.75)
+    else:
+        ax.axhline(color='black', lw=0.75)
 
     metrics_to_show = metrics_df.drop_duplicates(subset='time_valid', keep='last')
     expt_name = experiments[0]['name']['exact']
@@ -356,29 +373,19 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
             elif row.time_valid.hour == 18:
                 colors.append('orchid')
             else:
-                colors.append('black')
+                colors.append(default_plot_color)
 
     myLabel = set(cycle_labels)
 
-    for i in range(len(myLabel)):
-        """ Plot the first unique cycles to format the legend
-        """
-        plt.scatter(timestamps[i], values[i], #s=1,
-                c=colors[i], marker='|',
-                alpha=0.9, label=cycle_labels[i],
-                linewidths=0.5, edgecolors='none')
-    
-    
-    # proceed with onward
-    plt.scatter(timestamps[len(myLabel):], values[len(myLabel):], #s=1,
-                c=colors[len(myLabel):], marker='|', alpha=0.9,
-                linewidths=0.5, edgecolors='none')
+    if args.dark_theme:
+        plt.grid()
     
     values_timeseries = pd.Series(
         data = values,
         index = timestamps
     ).combine_first(time_domain)
     
+        
     plt.fill_between(
         values_timeseries.index,
         np.nan_to_num(values_timeseries.values),
@@ -386,23 +393,39 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
         step='mid',
         edgecolor='none',
         lw=0,
-        color='black',
-        alpha=0.2
+        color=fill_color,
+        zorder=2
     )
+    
+    for i in range(len(myLabel)):
+        """ Plot the first unique cycles to format the legend
+        """
+        plt.scatter(timestamps[i], values[i], #s=1,
+                c=colors[i], marker='|',
+                alpha=0.9, label=cycle_labels[i],
+                linewidths=0.5,
+                zorder=3)
+    
+    # proceed with onward
+    plt.scatter(timestamps[len(myLabel):], values[len(myLabel):], #s=1,
+                c=colors[len(myLabel):], marker='|', alpha=0.9,
+                linewidths=0.5,
+                zorder=3)
     
     values_smooth = values_timeseries.rolling(
                         window=window_size,
-                        min_periods=1,
+                        min_periods=int(np.around(args.days_to_smooth)),
                         center=True).mean()
     
     plt.plot(values_smooth.index,
              values_smooth.values,
              ls='-',
              marker='none',
-             color='black',
+             color=default_plot_color,
              alpha=0.9,
              lw=1.5,
-             label=f'{int(args.days_to_smooth)} day SMA')
+             label=f'{int(args.days_to_smooth)} day SMA',
+             zorder=4)
     
     format_figure(ax, pa)
     if stat == 'RMS':
@@ -469,8 +492,14 @@ class PlotIncrementRequest(PlotInnovStatsRequest):
                             self.date_range)
 
 if __name__=='__main__':
+    args = parse_arguments()
+    if args.dark_theme:
+        style_file = 'dark_theme.mplstyle'
+    else:
+        style_file = 'half_horizontal.mplstyle'
+    
     style_file_path = os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
-                                   'style_lib', 'half_horizontal.mplstyle')
+                                   'style_lib', style_file)
     plt.style.use(style_file_path)
     
     for i, plot_control_dict in enumerate([#plot_control_dict1,
