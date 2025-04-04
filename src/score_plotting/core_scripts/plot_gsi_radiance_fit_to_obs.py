@@ -70,8 +70,8 @@ def config():
             
         },
         'sensor_list': get_instrument_channels().keys(),
-        'start_date': '2018-10-01 00:00:00',
-        'stop_date': '2019-09-30 00:00:00',
+        'start_date': '1978-10-01 00:00:00',
+        'stop_date': '2025-09-30 00:00:00',
     }
     
     '''
@@ -295,9 +295,11 @@ class GSIRadianceFit2ObsFig(object):
         for channel_idx, channel_num in enumerate(self.channel_dict[sensor]):
             if len(sat_set) > 0:
                 max_yerr=0.5 # temperature (K)
+                figsize_width = 2 * 3.74 * ncols
+                figsize_length = 4.53 * len(sat_set)
                 fig, axes = plt.subplots(len(sat_set), ncols, sharex=True,sharey=False,
                                          squeeze=False,
-                                         figsize=(2*ncols*3.74, len(sat_set)*4.53))
+                                         figsize=(figsize_width, figsize_length))
                 
                 if self.gsi_it == 1:
                     title_str0 = f"GSI radiance data analysis fit to observations (O-B) [metrics downloaded from {self.db_name}"
@@ -311,7 +313,7 @@ class GSIRadianceFit2ObsFig(object):
                 else:
                     title_str1 = "]"
                     
-                fig.suptitle(f"{title_str0}{title_str1}")
+                #fig.suptitle(f"{title_str0}{title_str1}")
                 #axes[-1, 0].set_xlabel = 'Cycle date (Gregorian)'
                 #axes[-1, 1].set_xlabel = 'Cycle date (Gregorian)'
                 #axes[-1, 2].set_xlabel = 'Cycle date (Gregorian)'
@@ -703,7 +705,8 @@ class GSIRadianceFit2ObsFig(object):
                         axes[row, 2].set_ylim(bottom=0)
                 
                 plt.tight_layout()
-                plt.subplots_adjust(top=0.96)
+                plt.subplots_adjust(top = 1. - 1.2 / figsize_length)
+                fig.suptitle(f"{title_str0}{title_str1}")
                 if interactive:
                     plt.show()
                 else:
@@ -829,9 +832,9 @@ def main():
     """
     #run_avhrr()
     #run_tovs()
-    run_microwave_sounders2()
+    #run_microwave_sounders2()
     #run_atms()
-    #prun()
+    prun()
 
 if __name__ == "__main__":
     main()

@@ -309,7 +309,7 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     args = parse_arguments()
     
     if args.dark_theme:
-        default_plot_color = '#CFB87C'
+        default_plot_color = 'white'#'#CFB87C'
         fill_color = '#565A5C'
     else:
         default_plot_color = 'black'

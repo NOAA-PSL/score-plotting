@@ -12,9 +12,9 @@ patch.edgecolor:       white  # if forced, or patch is not filled
 hatch.color:     white
 
 ### FONT
-font.family : serif
-font.sans-serif : 'Noto Serif CJK JP'
-font.size : 11
+font.family: serif
+font.serif: Noto Serif CJK JP
+font.size: 11
 
 ## ***************************************************************************
 ## * TEXT                                                                    *
