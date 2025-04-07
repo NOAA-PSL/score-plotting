@@ -26,6 +26,8 @@ from score_db.expt_file_counts import ExptFileCountRequest
 from score_plotting.attrs.file_counts_plot_attrs import plot_attrs
 from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
+UFS_REPLAY_BUCKET = 'noaa-ufs-gefsv13replay-pds'
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     
@@ -145,13 +147,29 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'file_{metric}'}],
                      'work_dir': parse_arguments().figure_output_path}
                      
-plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+plot_control_dict_forward_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'end': '2025-09-30 00:00:00',
-                                    'start': '2020-10-01 00:00:00'},
+                                    'start': '2023-10-01 00:00:00'},
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'Number of objects uploaded per cycle',
+                                      'name': 'ufs_replay_ext',
+                                      'wallclock_start': '2024-10-01 00:00:00'}],
+                     'fig_base_fn': 'forward_ext_files',
+                     'stat_groups': [{'cycles': [0, 21600, 43200, 64800],
+                                      'metrics': ['count'],
+                                      'stat_group_frmt_str':
+                                      'file_{metric}'}],
+                     'work_dir': parse_arguments().figure_output_path}
+
+plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+                                    'end': '2025-09-30 00:00:00',
+                                    'start': '1978-10-01 00:00:00'},
+                     'db_request_name': 'expt_metrics',
+                     'method': 'GET',
+                     'experiments': [{'graph_color': 'black',
+                                      'graph_label': 'Number of objects uploaded per cycle',
                                       'name': 'ufs_replay_ext',
                                       'wallclock_start': '2024-10-01 00:00:00'}],
                      'fig_base_fn': 'files',
@@ -246,17 +264,17 @@ def build_fig_dest(work_dir, fig_base_fn, metric, date_range,
 
 def save_figure(dest_full_path):
     print(f'saving figure to {dest_full_path}')
-    plt.savefig(dest_full_path, dpi=600)
+    plt.savefig(dest_full_path, dpi=300)
 
 def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
-                     date_range):
+                     date_range, append_date_range=False):
     args = parse_arguments()
     
     if args.dark_theme:
         default_plot_color = 'white'#'#CFB87C'
         fill_color = '#565A5C'
     else:
-        default_plot_color = 'black'
+        default_plot_color = experiments[0]['graph_color']
         fill_color = '#A2A4A3'
     
     da_cycle = args.da_cycle
@@ -381,17 +399,30 @@ def plot_file_counts(experiments, metric, metrics_df, work_dir, fig_base_fn,
     today = date.today()
     plt.title(today, loc = "right")
     
-    locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
-    month_locator = mdates.MonthLocator()
+    locator = mdates.AutoDateLocator(minticks=8, maxticks=16)
+    
+    if pd.Timedelta(date_range.end - date_range.start) > pd.Timedelta(days=10957):
+        # date range is greater than 30 years; set minor tick interval to 3 months
+        month_interval = 3
+    else:
+        # date range is less than or equal to 30 years; set minor tick interval to 1 month
+        month_interval = 1
+    month_locator = mdates.MonthLocator(interval=month_interval)
     formatter = mdates.ConciseDateFormatter(locator)
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
     ax.xaxis.set_minor_locator(month_locator)
-    plt.title(expt_name)
+
+    if expt_name == 'ufs_replay_ext':
+        plot_title = f'{experiments[0]["graph_label"]} ({UFS_REPLAY_BUCKET})'
+    else:
+        plot_title = f'{experiments[0]["graph_label"]} ({expt_name})'
+    plt.title(plot_title, loc='left')
     format_figure(ax, pa)
     fig_fn = build_fig_dest(work_dir, fig_base_fn, metric, date_range,
-                            experiment_name=expt_name)  
+                            experiment_name=expt_name, append_date_range=append_date_range)  
 
+    plt.tight_layout()
     save_figure(fig_fn)
     plt.close()
 
@@ -404,6 +435,7 @@ class PlotFileCountRequest(PlotInnovStatsRequest):
 
         finished = False
         loop_count = 0
+
         for stat_group in self.stat_groups:
             metrics_data = []
             # gather experiment metrics data for experiment and date range
@@ -427,7 +459,8 @@ class PlotFileCountRequest(PlotInnovStatsRequest):
                     m_df,
                     self.work_dir,
                     self.fig_base_fn,
-                    self.date_range)
+                    self.date_range,
+                    append_date_range=False)
 
 if __name__=='__main__':
     args = parse_arguments()
@@ -439,13 +472,14 @@ if __name__=='__main__':
     style_file_path = os.path.join(pathlib.Path(__file__).parent.parent.resolve(),
                                    'style_lib', style_file)
     plt.style.use(style_file_path)
-    for i, plot_control_dict in enumerate([plot_control_dict1,
-                                           plot_control_dict2,
-                                           plot_control_dict3,
-                                           plot_control_dict4,
-                                           plot_control_dict5,
-                                           plot_control_dict6,
-                                           plot_control_dict_ext
+    for i, plot_control_dict in enumerate([#plot_control_dict1,
+                                           #plot_control_dict2,
+                                           #plot_control_dict3,
+                                           #plot_control_dict4,
+                                           #plot_control_dict5,
+                                           #plot_control_dict6,
+                                           plot_control_dict_ext,
+                                           plot_control_dict_forward_ext
                                          ]):
         plot_request = PlotFileCountRequest(plot_control_dict)
         plot_request.submit()

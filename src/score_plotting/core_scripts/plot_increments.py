@@ -22,6 +22,7 @@ from score_plotting.attrs.increments_plot_attrs import plot_attrs
 from score_plotting.core_scripts.plot_innov_stats import PlotInnovStatsRequest
 
 HOURS_PER_DAY = 24. # hours
+UFS_REPLAY_BUCKET = 'noaa-ufs-gefsv13replay-pds'
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -60,7 +61,7 @@ plot_control_dict1 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
                                       'name': 'replay_stream1',
                                       'wallclock_start': '2023-07-08 16:25:57'}],
                      'fig_base_fn': 'increment',
@@ -82,7 +83,7 @@ plot_control_dict2 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
                                       'name': 'replay_stream2',
                                       'wallclock_start': '2023-07-24 17:56:40'}],
                      'fig_base_fn': 'increment',
@@ -104,7 +105,7 @@ plot_control_dict3 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
                                       'name': 'replay_stream3',
                                       'wallclock_start': '2023-01-22 09:22:05'}],
                      'fig_base_fn': 'increment',
@@ -125,7 +126,7 @@ plot_control_dict4 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
                                       'name': 'replay_stream4',
                                       'wallclock_start': '2023-01-22 09:22:05'}],
                      'fig_base_fn': 'increment',
@@ -146,7 +147,7 @@ plot_control_dict5 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
                                       'name': 'replay_stream5',
                                       'wallclock_start': '2023-07-08 06:20:22'}],
                      'fig_base_fn': 'increment',
@@ -167,7 +168,7 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
                                       'name': 'replay_stream6',
                                       'wallclock_start': '2023-07-24 20:29:23'}],
                      'fig_base_fn': 'increment',
@@ -183,13 +184,35 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'metric_type_{stat}_{metric}'}],
                      'work_dir': parse_arguments().figure_output_path}
                      
-plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
-                                    'start': '2020-10-01 00:00:00',
+plot_control_dict_forward_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+                                    'start': '2023-10-01 00:00:00',
                                     'end': '2025-09-30 00:00:00'},
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',
-                                      'graph_label': 'increments',
+                                      'graph_label': 'increment',
+                                      'name': 'ufs_replay_ext',
+                                      'wallclock_start': '2024-10-01 00:00:00'}],
+                     'fig_base_fn': 'forward_ext_increment',
+                     'stat_groups': [{'cycles': [0, 21600, 43200, 64800],
+                                      'stats': ['mean', 'RMS'],
+                                      'metrics': ['pt_inc', 's_inc','u_inc_ocn',
+                                                  'v_inc_ocn', 'u_inc_atm','v_inc_atm',
+                                                  'SSH', 'Salinity', 'Temperature',
+                                                  'Speed of Currents', 'o3mr_inc',
+                                                  'sphum_inc', 'T_inc', 'delp_inc',
+                                                  'delz_inc'],
+                                      'stat_group_frmt_str':
+                                      'metric_type_{stat}_{metric}'}],
+                     'work_dir': parse_arguments().figure_output_path}
+
+plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+                                    'start': '1978-10-01 00:00:00',
+                                    'end': '2025-09-30 00:00:00'},
+                     'db_request_name': 'expt_metrics',
+                     'method': 'GET',
+                     'experiments': [{'graph_color': 'black',
+                                      'graph_label': 'increment',
                                       'name': 'ufs_replay_ext',
                                       'wallclock_start': '2024-10-01 00:00:00'}],
                      'fig_base_fn': 'increment',
@@ -302,17 +325,17 @@ def build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range,
 
 def save_figure(dest_full_path):
     print(f'saving figure to {dest_full_path}')
-    plt.savefig(dest_full_path, dpi=600)
+    plt.savefig(dest_full_path, dpi=300)
 
 def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn,
-                     date_range):
+                     date_range, append_date_range=False):
     args = parse_arguments()
     
     if args.dark_theme:
         default_plot_color = 'white'#'#CFB87C'
         fill_color = '#565A5C'
     else:
-        default_plot_color = 'black'
+        default_plot_color = experiments[0]['graph_color']
         fill_color = '#A2A4A3'
     
     time_domain = pd.Series(
@@ -341,10 +364,6 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
 
     metrics_to_show = metrics_df.drop_duplicates(subset='time_valid', keep='last')
     expt_name = experiments[0]['name']['exact']
-    expt_graph_label = experiments[0]['graph_label']
-
-    if "_inc" not in metric:
-       expt_graph_label = stat
 
     timestamps = list()
     labels = list()
@@ -383,8 +402,7 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
     values_timeseries = pd.Series(
         data = values,
         index = timestamps
-    ).combine_first(time_domain)
-    
+    ).combine_first(time_domain)    
         
     plt.fill_between(
         values_timeseries.index,
@@ -428,25 +446,103 @@ def plot_increments(experiments, stat, metric, metrics_df, work_dir, fig_base_fn
              zorder=4)
     
     format_figure(ax, pa)
-    if stat == 'RMS':
+    '''
+    ymin, ymax = ax.get_ylim()
+    if stat == 'RMS' and ymin < 0:
         ax.set_ylim(0, None)
+    if stat == 'RMS' and np.nanmin(values) > 0:
+        ax.set_ylim(np.nanmin(values, None))
+    if "_inc" not in metric and np.nanmin(values) > 0:
+        ax.set_ylim(np.nanmin(values, None))
+    '''
+    ax.set_ylim(np.nanmin(values), np.nanmax(values))
 
-    plt.title(stat+" "+metric+" " +expt_name, loc = "left")
-    today = date.today()
-    plt.title(today, loc = "right")
-  
-    plt.ylabel(expt_graph_label+" ("+row.metric_unit+")")
+    if "_inc" not in metric:
+        # this is not an increment
+        if row.metric_unit == 'C':
+            if metric=='pt':
+                plot_basic_title = 'ocean potential temperature'
+                expt_graph_label = 'Potential temperature ($^\circ$C)'
+            elif metric=='Temperature':
+                plot_basic_title = 'ocean temperature'
+                expt_graph_label = 'Temperature ($^\circ$C)'
+        elif row.metric_unit == 'm':
+            if metric =='SSH':
+                plot_basic_title = 'sea surface height (SSH)'
+                expt_graph_label = 'SSH (m)'
+        elif row.metric_unit == 'PSU':
+            plot_basic_title = 'ocean salinity'
+            expt_graph_label = 'Salinity (psu)'    
+        elif row.metric_unit == 'm/s':
+            if metric=='Speed of Currents':
+                plot_basic_title = 'speed of currents'
+                expt_graph_label = 'Speed (m s$^{-1}$)'
+    else:
+        if row.metric_unit == 'C':
+            if metric=='pt_inc':
+                plot_basic_title = 'ocean potential temperature increment'
+                expt_graph_label = 'Potential temperature increment ($^\circ$C)'
+            elif metric=='T_inc':
+                plot_basic_title = 'air temperature increment'
+                expt_graph_label = 'Temperature increment ($^\circ$C)'
+        elif row.metric_unit == 'PSU':
+            plot_basic_title = 'ocean salinity increment'
+            expt_graph_label = 'Salinity increment (psu)'
+        elif row.metric_unit == 'm/s':
+            expt_graph_label = 'Speed increment (m s$^{-1}$)'
+            if metric=='u_inc_atm':
+                plot_basic_title = 'westerly wind speed increment'
+            elif metric=='v_inc_atm':
+                plot_basic_title = 'southerly wind speed increment'
+            elif metric=='u_inc_ocn':
+                plot_basic_title = 'horizontal x-direction ocean speed increment'
+            elif metric=='v_inc_ocn':
+                plot_basic_title = 'horizontal y-direction ocean speed increment'
+        elif row.metric_unit == 'kg/kg':
+            if metric=='o3mr_inc':
+                plot_basic_title = 'ozone mixing ratio increment'
+                expt_graph_label = 'Mixing ratio increment (kg kg$^{-1}$)'
+            elif metric=='sphum_inc':
+                plot_basic_title = 'specific humidity increment'
+                expt_graph_label = 'Specific humidity increment (kg kg$^{-1}$)'
+        if metric=='delp_inc':
+            plot_basic_title = 'pressure differential increment'
+            expt_graph_label = 'Pressure differential increment (Pa)'
+        elif row.metric_unit == 'm':
+            if metric=='delz_inc':
+                plot_basic_title = 'geometric layer height differential increment'
+                expt_graph_label = 'Layer height differential increment (m)'
     
-    locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
-    month_locator = mdates.MonthLocator()
+    if expt_name == 'ufs_replay_ext':
+        plot_expt_title = UFS_REPLAY_BUCKET
+    else:
+        plot_expt_title = expt_name 
+    
+    plt.title(f'Global {stat} {plot_basic_title}', loc='left')
+    today = date.today()
+    fig.suptitle(plot_expt_title, x=0.02, ha='left')
+    plt.title(today, loc='right')
+    plt.ylabel(expt_graph_label)
+    
+    locator = mdates.AutoDateLocator(minticks=8, maxticks=16)
+    
+    if pd.Timedelta(date_range.end - date_range.start) > pd.Timedelta(days=10957):
+        # date range is greater than 30 years; set minor tick interval to 3 months
+        month_interval = 3
+    else:
+        # date range is less than or equal to 30 years; set minor tick interval to 1 month
+        month_interval = 1
+    
+    month_locator = mdates.MonthLocator(interval=month_interval)
     formatter = mdates.ConciseDateFormatter(locator)
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
     ax.xaxis.set_minor_locator(month_locator)
     
     fig_fn = build_fig_dest(work_dir, fig_base_fn, stat, metric, date_range,
-                            experiment_name=expt_name)
+                            experiment_name=expt_name, append_date_range=append_date_range)
 
+    plt.tight_layout()
     save_figure(fig_fn)
     plt.close()
 
@@ -489,7 +585,8 @@ class PlotIncrementRequest(PlotInnovStatsRequest):
                             m_df,
                             self.work_dir,
                             self.fig_base_fn,
-                            self.date_range)
+                            self.date_range,
+                            append_date_range=False)
 
 if __name__=='__main__':
     args = parse_arguments()
@@ -508,6 +605,7 @@ if __name__=='__main__':
                                            #plot_control_dict4,
                                            #plot_control_dict5,
                                            #plot_control_dict6
-                                           plot_control_dict_ext]):
+                                           plot_control_dict_ext,
+                                           plot_control_dict_forward_ext]):
         plot_request = PlotIncrementRequest(plot_control_dict)
         plot_request.submit()

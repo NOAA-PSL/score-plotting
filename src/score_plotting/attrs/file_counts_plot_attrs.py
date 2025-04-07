@@ -30,6 +30,6 @@ plot_attrs = {'count': PlotAttrs(metric='count',
                                        xlabel=DEFAULT_XLABEL,
                                        ylabel=AxesLabel(
                                                    axis='y',
-                                                   label='Number of files',
+                                                   label=None,
                                                    horizontalalignment='center'
                                                    ))}
