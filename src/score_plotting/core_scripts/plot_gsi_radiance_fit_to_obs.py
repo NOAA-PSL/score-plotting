@@ -276,8 +276,9 @@ class GSIRadianceFit2ObsFig(object):
                      alpha_background=0.5,
                      interactive=False):
         output_dir = os.path.join(self.config_dict['output_path'], f"{sensor}")
-        locator = mdates.AutoDateLocator(minticks=5, maxticks=10)
+        locator = mdates.AutoDateLocator(minticks=8, maxticks=16)
         formatter = mdates.ConciseDateFormatter(locator)
+        
         month_locator = mdates.MonthLocator(interval=1)
         
         # Check if the directory exists, and create it if it doesn't
@@ -704,9 +705,9 @@ class GSIRadianceFit2ObsFig(object):
                     if nobs_ylims[0] < 0:
                         axes[row, 2].set_ylim(bottom=0)
                 
+                fig.suptitle(f"{title_str0}{title_str1}")
                 plt.tight_layout()
                 plt.subplots_adjust(top = 1. - 1.2 / figsize_length)
-                fig.suptitle(f"{title_str0}{title_str1}")
                 if interactive:
                     plt.show()
                 else:
