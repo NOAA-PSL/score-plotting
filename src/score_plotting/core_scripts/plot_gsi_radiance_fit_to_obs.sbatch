@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=gsi_radiance_plots      # Name of the job
 #SBATCH --output=plot_gsi%j.log     # Output log file with job ID
-#SBATCH --ntasks=12
+#SBATCH --ntasks=16
 #SBATCH --ntasks-per-node=16           # Number of tasks (CPUs) per node
 #SBATCH --cpus-per-task=2
 #SBATCH --nodes=1                      # Number of nodes (adjust based on your requirements)

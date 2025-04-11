@@ -15,13 +15,11 @@ import matplotlib.dates as mdates
 import pandas as pd
 from mpi4py import MPI
 
-import gsistats_timeseries
-from instrument_channel_nums import get_instrument_channels
-import satellite_names
+from score_plotting.core_scripts import gsistats_timeseries
+from score_plotting.core_scripts.instrument_channel_nums import get_instrument_channels
+from score_plotting.core_scripts import satellite_names
 
 HOURS_PER_DAY = 24. # hours
-
-import argparse
 
 def config():
     """Add experiment name entries to experiment_list and
