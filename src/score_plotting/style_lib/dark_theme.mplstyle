@@ -39,13 +39,13 @@ axes.labelcolor:    A2A4A3
 axes.titlesize : 12
 axes.labelsize : 12
 
-
 ## ***************************************************************************
 ## * TICKS                                                                   *
 ## ***************************************************************************
 ## See https://matplotlib.org/api/axis_api.html#matplotlib.axis.Tick
 xtick.color:          A2A4A3  # color of the tick labels
 ytick.color:         A2A4A3   # color of the tick labels
+
 xtick.labelsize : 12
 ytick.labelsize : 12
 
