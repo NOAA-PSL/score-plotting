@@ -3,7 +3,7 @@
 ### FONT
 font.size: 12
 font.family: serif
-font.sans-serif: FreeSans, Roboto, Arial, Helvetica
+font.sans-serif: Helvetica Neue, FreeSans, Roboto, Arial, Helvetica
 font.serif: Noto Serif CJK JP
 
 ### TEXT

@@ -64,8 +64,12 @@ def config():
                 'color' : 'black',
                 'ls': '-',
                 'lw': 0.75
-            }
-            
+            },
+            'replay_observer_diagnostic_overlap' : {
+                'color' : 'black',
+                'ls': '-',
+                'lw': 0.75
+            }   
         },
         'sensor_list': get_instrument_channels().keys(),
         'start_date': '1978-10-01 00:00:00',
@@ -80,6 +84,7 @@ def config():
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
                          "replay_observer_diagnostic_v1": "UFS-replay",
+                         "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
@@ -736,7 +741,7 @@ def run_tovs(sensor_list = ['hirs2', 'hirs3', 'hirs4', 'ssu', 'msu']):
 def run_avhrr(sensor_list = ['avhrr2', 'avhrr3']):
     prun(sensor_list=sensor_list)
 
-def prun(sensor_list=None):
+def prun(experiment_list=None, sensor_list=None, start_date=None, stop_date=None):
     args = parse_arguments()
     gsi_it = args.gsi_stage
     
@@ -747,11 +752,20 @@ def prun(sensor_list=None):
 
     # Load global configurations and friendly names
     global_config_dict, global_friendly_names_dict = config()
-
+    
+    if experiment_list is None:
+        experiment_list = global_config_dict['experiment_list']
+        
+    if start_date is None:
+        start_date = global_config_dict['start_date']
+        
+    if stop_date is None:
+        stop_date = global_config_dict['stop_date']
+    
     if args.sensor != 'all':
         sensor_list = [args.sensor]
     
-    if sensor_list==None:
+    if sensor_list is None:
         sensor_list = list()
         for sensor in global_config_dict['sensor_list']:
             sensor_list.append(sensor)
@@ -764,10 +778,10 @@ def prun(sensor_list=None):
     # Rank 0 prepares the data
     if rank == 0:
         global_data_frame = get_data_frame(
-            global_config_dict['experiment_list'],
+            experiment_list,
             sensor_list,
-            start_date=global_config_dict['start_date'],
-            stop_date=global_config_dict['stop_date'],
+            start_date=start_date,
+            stop_date=stop_date,
             select_sat_name = select_sat_name,
             sat_name=args.satellite,
             gsi_it=gsi_it)
@@ -821,6 +835,9 @@ def prun(sensor_list=None):
             if args.channel != 9999:
                 experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
+            experiment_metrics_timeseries_data.experiment_list = experiment_list
+            experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
+            experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
             experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
                                                                 days_to_smooth=args.days_to_smooth,
                                                                 da_cycle=args.da_cycle,
