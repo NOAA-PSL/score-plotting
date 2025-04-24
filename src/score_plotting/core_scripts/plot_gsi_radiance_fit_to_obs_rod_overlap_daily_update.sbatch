@@ -14,4 +14,4 @@ source $HOME/.bashrc
 micromamba activate darr_score_sqlalchemy1_env
 which mpirun
 # Run the MPI Python script using srun
-/media/darr/opt/micromamba/envs/darr_score_sqlalchemy1_env/bin/mpirun /media/darr/opt/micromamba/envs/darr_score_sqlalchemy1_env/bin/python /media/darr/src/score-plotting/src/score_plotting/core_scripts/plot_gsi_radiance_fit_to_obs_rod_overlap_daily_update.py /media/darr/results/figures/brightness_temperature_error_timeseries/overlap
+/media/darr/opt/micromamba/envs/darr_score_sqlalchemy1_env/bin/mpirun /media/darr/opt/micromamba/envs/darr_score_sqlalchemy1_env/bin/python /media/darr/src/score-plotting/src/score_plotting/core_scripts/plot_gsi_radiance_fit_to_obs_rod_overlap_daily_update.py /media/darr/results/figures/brightness_temperature_error_timeseries_rod_overlap
