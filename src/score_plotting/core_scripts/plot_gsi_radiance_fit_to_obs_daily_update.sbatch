@@ -10,9 +10,9 @@
 #SBATCH --mail-type=ALL                # Send an email when the job starts, ends, or fails
 #SBATCH --mail-user=Chesley.Mccoll@noaa.gov  # Email address for notifications
 
-source $HOME/.bashrc
-micromamba activate darr_score_sqlalchemy1_env
-which mpirun
-# Run the MPI Python script using srun
-/media/darr/opt/micromamba/envs/darr_score_sqlalchemy1_env/bin/mpirun /media/darr/opt/micromamba/envs/darr_score_sqlalchemy1_env/bin/python /media/darr/src/score-plotting/src/score_plotting/core_scripts/plot_gsi_radiance_fit_to_obs_daily_update.py /media/darr/results/figures/brightness_temperature_error_timeseries
+source $HOME/.bash_profile
+micromamba activate darr_score_sqlalchemy1_dev_env
+#which mpirun
+# Run the MPI Python script using mpiexec
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update /media/darr/results/figures/brightness_temperature_error_timeseries
 
