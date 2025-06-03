@@ -12,7 +12,7 @@ patch.edgecolor:       white  # if forced, or patch is not filled
 hatch.color:     white
 
 ### FONT
-font.family: sans-serif
+font.family: serif
 font.sans-serif: Helvetica Neue
 font.serif: Noto Serif CJK JP
 font.size: 12
