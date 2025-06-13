@@ -63,13 +63,18 @@ def config():
             'scout_run_v1' : {
                 'color' : 'black',
                 'ls': '-',
-                'lw': 0.75
+                'lw': 1.5
             },
             'replay_observer_diagnostic_overlap' : {
                 'color' : 'black',
                 'ls': '-',
                 'lw': 0.75
-            }   
+            },
+            '3dvar_coupledreanl_scoutrun_1979streamv1_test' : {
+                'color' : '#003087',
+                'ls': '-',
+                'lw': 1.25
+            }
         },
         'sensor_list': get_instrument_channels().keys(),
         'start_date': '1978-10-01 00:00:00',
@@ -80,11 +85,12 @@ def config():
     could this be done by string matching for the std/bias etc part? we could
     have a basic friendly dict for that
     '''
-    friendly_names_dict={"scout_run_v1": "scout run (3DVar)",
+    friendly_names_dict={"scout_run_v1": "atmosphere scout (3DVar)",
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
                          "replay_observer_diagnostic_v1": "UFS-replay",
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
+                         "3dvar_coupledreanl_scoutrun_1979streamv1_test":"weakly coupled scout (3DVar)",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
@@ -201,6 +207,8 @@ class GSIRadianceFit2ObsFig(object):
             for expt_name in self.config_dict['experiment_plot_dict'].keys():
                 if self.config_dict['experiment_plot_dict'][expt_name]['color'] == 'black':
                     self.config_dict['experiment_plot_dict'][expt_name]['color'] = self.default_plot_color
+                elif self.config_dict['experiment_plot_dict'][expt_name]['color'] == '#003087':
+                    self.config_dict['experiment_plot_dict'][expt_name]['color'] = 'white'
         else:
             self.default_plot_color = 'black'
             self.fill_color = '#A2A4A3'

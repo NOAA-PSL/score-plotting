@@ -179,6 +179,23 @@ plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                       'file_{metric}'}],
                      'work_dir': parse_arguments().figure_output_path}
 
+plot_control_dict_weakly_coupled_scout = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
+                                    'end': '1979-02-01 00:00:00',
+                                    'start': '1979-01-01 00:00:00'},
+                     'db_request_name': 'expt_metrics',
+                     'method': 'GET',
+                     'experiments': [{'graph_color': 'black',
+                                      'graph_label': 'Number of objects uploaded per cycle',
+                                      'name': '3dvar_coupledreanl_scoutrun_1979streamv1_test',
+                                      'wallclock_start': '2025-06-05 17:00:00'}],
+                     'fig_base_fn': 'files',
+                     'stat_groups': [{'cycles': [0, 21600, 43200, 64800],
+                                      'metrics': ['count'],
+                                      'stat_group_frmt_str':
+                                      'file_{metric}'}],
+                     'work_dir': parse_arguments().figure_output_path}
+
+
 def get_experiment_file_counts(request_data):
     
     expt_metric_name = request_data.metric_format_str.replace(
@@ -479,7 +496,8 @@ if __name__=='__main__':
                                            #plot_control_dict5,
                                            #plot_control_dict6,
                                            plot_control_dict_ext,
-                                           plot_control_dict_forward_ext
+                                           plot_control_dict_forward_ext,
+                                           plot_control_dict_weakly_coupled_scout,
                                          ]):
         plot_request = PlotFileCountRequest(plot_control_dict)
         plot_request.submit()
