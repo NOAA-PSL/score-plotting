@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=16           # Number of tasks (CPUs) per node
 #SBATCH --cpus-per-task=2
 #SBATCH --nodes=1                      # Number of nodes (adjust based on your requirements)
-#SBATCH --time=48:00:00                # Max wall time (adjust as needed)
+#SBATCH --time=12:00:00                # Max wall time (adjust as needed)
 #SBATCH --partition=batch              # Partition to use
 #SBATCH --mail-type=ALL                # Send an email when the job starts, ends, or fails
 #SBATCH --mail-user=Chesley.Mccoll@noaa.gov  # Email address for notifications

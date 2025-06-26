@@ -41,7 +41,8 @@ def config():
         'experiment_list': ['NASA_GEOSIT_GSISTATS',
                             'GDAS',
                             'replay_observer_diagnostic_v1',
-                            'scout_run_v1'
+                            'scout_run_v1',
+                            '3dvar_coupledreanl_scoutrun_1979streamv1_test'
                          ],
         
         'experiment_plot_dict': {
