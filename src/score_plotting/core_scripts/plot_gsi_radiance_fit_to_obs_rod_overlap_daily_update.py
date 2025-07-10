@@ -33,8 +33,8 @@ def main():
             'avhrr2',
             'avhrr3'
         ],
-        start_date='2018-10-01 00:00:00',
-        stop_date='2024-09-30 00:00:00'
+        start_date='2017-10-01 00:00:00',
+        stop_date='2023-09-30 23:59:59'
     )
 
 if __name__=='__main__':
