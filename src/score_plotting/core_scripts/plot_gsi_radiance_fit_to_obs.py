@@ -17,6 +17,7 @@ from mpi4py import MPI
 
 from score_plotting.core_scripts import gsistats_timeseries
 from score_plotting.core_scripts.instrument_channel_nums import get_instrument_channels
+from score_plotting.core_scripts.instrument_channel_nums import get_instrument_longnames
 from score_plotting.core_scripts import satellite_names
 
 HOURS_PER_DAY = 24. # hours
@@ -182,6 +183,7 @@ class GSIRadianceFit2ObsFig(object):
         self.gsi_it = int(gsi_it)
         self.config_dict, self.friendly_names_dict = config()
         self.channel_dict = get_instrument_channels()
+        self.sensor_longnames = get_instrument_longnames()
         self.experiment_list = self.config_dict['experiment_list']
                 
         if input_data_frame:
@@ -287,6 +289,9 @@ class GSIRadianceFit2ObsFig(object):
                      alpha_foreground=0.9,
                      alpha_background=0.5,
                      interactive=False):
+        
+        sensor_longname = self.sensor_longnames[sensor]
+        
         output_dir = os.path.join(self.config_dict['output_path'], f"{sensor}")
         locator = mdates.AutoDateLocator(minticks=8, maxticks=16)
         formatter = mdates.ConciseDateFormatter(locator)
@@ -315,9 +320,11 @@ class GSIRadianceFit2ObsFig(object):
                                          figsize=(figsize_width, figsize_length))
                 
                 if self.gsi_it == 1:
-                    title_str0 = f"GSI radiance data analysis fit to observations (O-B) [metrics downloaded from {self.db_name}"
+                    difference_str = "ob - bg"
                 elif self.gsi_it >= 2:
-                    title_str0 = f"GSI radiance data analysis fit to observations (O-A) [metrics downloaded from {self.db_name}"
+                    difference_str = "ob - anal"
+                
+                title_str0 = f"GSI radiance data anal fit to obs ({difference_str}) [metrics downloaded: {self.db_name}"
                 
                 if init_datetime:
                     init_ctime = init_datetime.ctime()
@@ -336,14 +343,16 @@ class GSIRadianceFit2ObsFig(object):
                     sat_label = satellite_names.get_longname(sat_short_name)
                     
                     # subplot titles
-                    axes[row, 0].set_title(f"{sat_label} {sensor} channel {channel_num}")
-                    axes[row, 1].set_title(f"{sat_label} {sensor} channel {channel_num}")
-                    axes[row, 2].set_title(f"{sat_label} {sensor} channel {channel_num}")
+                    axes[row, 0].set_title(f"Mean {difference_str}: {sensor_longname} chan {channel_num} ({sat_label})")
+                    axes[row, 1].set_title(f"RMS {difference_str}: {sensor_longname} chan {channel_num} ({sat_label})")
+                    axes[row, 2].set_title(f"Nobs used: {sensor_longname} chan {channel_num} ({sat_label})")
                     
                     # vertical axes labels
-                    axes[row, 0].set_ylabel('Brightness temperature mean error (K)')
-                    axes[row, 1].set_ylabel('Brightness temperature RMS error (K)')
-                    axes[row, 2].set_ylabel('Number of observations used')
+                    axes[row, 0].set_ylabel(f'Brightness temp mean {difference_str} '
+                                            r'($^{\circ}$C)')
+                    axes[row, 1].set_ylabel(f'Brightness temp RMS {difference_str} '
+                                            '($^{\circ}$C)')
+                    axes[row, 2].set_ylabel(f'Number of obs used')
                     #rejection_ratio_ax = axes[row, 2].twinx()
                     #rejection_ratio_ax.set_ylabel('Percentage of observations tossed (%)')
                     if self.dark_theme:

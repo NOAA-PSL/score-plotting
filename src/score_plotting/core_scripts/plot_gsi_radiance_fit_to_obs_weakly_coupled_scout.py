@@ -15,8 +15,8 @@ def main():
             'scout_run_v1',
             '3dvar_coupledreanl_scoutrun_1979streamv1_test'
         ],
-        start_date='1979-01-01 00:00:00',
-        stop_date='1979-02-01 00:00:00'
+        start_date='1978-10-01 00:00:00',
+        stop_date='1979-09-30 23:59:59'
     )
 
 if __name__=='__main__':
