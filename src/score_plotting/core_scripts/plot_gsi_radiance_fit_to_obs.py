@@ -320,9 +320,9 @@ class GSIRadianceFit2ObsFig(object):
                                          figsize=(figsize_width, figsize_length))
                 
                 if self.gsi_it == 1:
-                    difference_str = "ob - bg"
+                    difference_str = "Ob - Bg"
                 elif self.gsi_it >= 2:
-                    difference_str = "ob - anal"
+                    difference_str = "Ob - Anal"
                 
                 title_str0 = f"GSI radiance data anal fit to obs ({difference_str}) [metrics downloaded: {self.db_name}"
                 
