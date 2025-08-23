@@ -12,7 +12,7 @@ LegendData = namedtuple('LegendData', ['loc', 'fancybox', 'edgecolor',
 
 AxesLabel = namedtuple('AxesLabel', ['axis', 'label', 'horizontalalignment'])
 
-DEFAULT_LEGEND_ATTRS = LegendData(loc='upper left', fancybox=None, 
+DEFAULT_LEGEND_ATTRS = LegendData(loc='upper right', fancybox=None, 
                                   edgecolor=None, framealpha=None, shadow=None,
                                   fontsize='small', facecolor=None)
 
@@ -30,6 +30,6 @@ plot_attrs = {'count': PlotAttrs(metric='count',
                                        xlabel=DEFAULT_XLABEL,
                                        ylabel=AxesLabel(
                                                    axis='y',
-                                                   label='Number of files',
+                                                   label=None,
                                                    horizontalalignment='center'
                                                    ))}
