@@ -269,13 +269,13 @@ class GSIConvFit2ObsFig(object):
                     self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
                     
                     # subplot titles
-                    self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({local_df.obs_platform.values[0]})')
-                    self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({local_df.obs_platform.values[0]})')
-                    self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({local_df.obs_platform.values[0]})')
+                    self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({data_frame_to_show.obs_platform.values[0]})')
+                    self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({data_frame_to_show.obs_platform.values[0]})')
+                    self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({data_frame_to_show.obs_platform.values[0]})')
         
                     # vertical axes labels
-                    self.axes[axes_row, 0].set_ylabel(f'Bias {local_df.metric_long_name.values[0]}')
-                    self.axes[axes_row, 1].set_ylabel(f'RMS {local_df.metric_long_name.values[0]}')
+                    self.axes[axes_row, 0].set_ylabel(f'Bias {data_frame_to_show.metric_long_name.values[0]}')
+                    self.axes[axes_row, 1].set_ylabel(f'RMS {data_frame_to_show.metric_long_name.values[0]}')
                     self.axes[axes_row, 2].set_ylabel('Number of obs assimilated')
 
                     if self.dark_theme:
