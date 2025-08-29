@@ -36,10 +36,40 @@ def config():
                          'style_lib'),
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
-        'experiment_list': ['3dvar_coupledreanl_scoutrun_1979streamv1_test1'
+        'experiment_list': [
+            #'NASA_GEOSIT_GSISTATS',
+            #'GDAS',
+            #'replay_observer_diagnostic_v1',
+            'scout_run_v1',
+            '3dvar_coupledreanl_scoutrun_1979streamv1_test1'
                          ],
         
         'experiment_plot_dict': {
+                        'NASA_GEOSIT_GSISTATS' :
+                {'color' : '#E4002B',
+                 'ls': '-',
+                 'lw': 1.5
+            },
+            'GDAS' : {
+                'color' : '#003087',
+                'ls': '-',
+                'lw': 1.25
+            },
+            'replay_observer_diagnostic_v1' : {
+                'color' : '#0085CA',
+                'ls': '-',
+                'lw': 1.
+            },
+            'scout_run_v1' : {
+                'color' : 'black',
+                'ls': '-',
+                'lw': 1.5
+            },
+            'replay_observer_diagnostic_overlap' : {
+                'color' : 'black',
+                'ls': '-',
+                'lw': 0.75
+            },
             '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
                 'color' : '#003087',
                 'ls': '-',
@@ -70,7 +100,13 @@ def config():
     could this be done by string matching for the std/bias etc part? we could
     have a basic friendly dict for that
     '''
-    friendly_names_dict={"3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled scout (3DVar)",
+    friendly_names_dict={
+            "scout_run_v1": "atmosphere scout (3DVar)",
+            "NASA_GEOSIT_GSISTATS": "GEOS-IT",
+            "GDAS": "GDAS",
+            "replay_observer_diagnostic_v1": "UFS-replay",
+            "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
+            "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled scout (3DVar)",
                          }
                          
     return(config_dict, friendly_names_dict)
@@ -235,7 +271,7 @@ class GSIConvFit2ObsFig(object):
             for sensor in sensors_to_show:
     
                 self.max_yerr=0.
-                if variable in self.config_dict['variable_list'] and sensor is not None:
+                if variable in self.variable_list and sensor is not None:
                     experiment_timeseries_datetime_init=None
                     
                     data_frame_to_show = local_data_frame[local_data_frame.metric_instrument_name==sensor]
@@ -269,9 +305,9 @@ class GSIConvFit2ObsFig(object):
                     self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
                     
                     # subplot titles
-                    self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({data_frame_to_show.obs_platform.values[0]})')
-                    self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({data_frame_to_show.obs_platform.values[0]})')
-                    self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({data_frame_to_show.obs_platform.values[0]})')
+                    self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
+                    self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
+                    self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
         
                     # vertical axes labels
                     self.axes[axes_row, 0].set_ylabel(f'Bias {data_frame_to_show.metric_long_name.values[0]}')
@@ -311,7 +347,7 @@ class GSIConvFit2ObsFig(object):
                 elif self.gsi_it >= 2:
                     difference_str = "Ob - Anal"
                 
-                title_str0 = f"GSI conventional data anal fit to surface obs ({difference_str}) [metrics downloaded: {self.db_name}"
+                title_str0 = f"GSI conventional data anal fit to assimilated obs ({difference_str}) [metrics downloaded: {self.db_name}"
             
             if experiment_timeseries_datetime_init:
                 init_ctime = experiment_timeseries_datetime_init.ctime()
@@ -326,9 +362,9 @@ class GSIConvFit2ObsFig(object):
                 plt.show()
             else:
                 if self.gsi_it ==1:
-                    fig_title=f'gdas_gsi_omb_{variable}.png'
+                    fig_title=f'gdas_gsi_conv_asm_omb_{variable}.png'
                 elif self.soca_it >=2:
-                    fig_title=f'gdas_gsi_oma_{variable}.png'
+                    fig_title=f'gdas_gsi_conv_asm_oma_{variable}.png'
                 plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
             plt.close()
     
@@ -339,9 +375,10 @@ class GSIConvFit2ObsFig(object):
         #experiment_idx = 0
         for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
             for metric, timeseries_data in timeseries_dict.items():
-                value_arr = timeseries_data.value_dict[sensor]['asm']
-                timestamp_arr = timeseries_data.timestamp_dict[sensor]['asm']
-                if metric.split('_')[0] == 'bias' and sensor in timeseries_data.timestamp_dict.keys():
+                if sensor in timeseries_data.timestamp_dict[metric].keys():
+                    value_arr = timeseries_data.value_dict[metric][sensor]['asm']
+                    timestamp_arr = timeseries_data.timestamp_dict[metric][sensor]['asm']
+                if metric.split('_')[0] == 'bias' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
                     """ mean error plot
                     """
                     bias_timeseries = pd.Series(
@@ -390,7 +427,7 @@ class GSIConvFit2ObsFig(object):
 
                     self.axes[axes_row,0].legend(loc='upper right')
                 
-                elif metric.split('_')[0] == 'rms' and sensor in timeseries_data.timestamp_dict.keys():
+                elif metric.split('_')[0] == 'rms' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
                     """RMS error plot
                     """
                     rmse_timeseries = pd.Series(
@@ -437,7 +474,7 @@ class GSIConvFit2ObsFig(object):
                         zorder=3
                     )
                                         
-                elif metric.split('_')[0] == 'count' and sensor in timeseries_data.timestamp_dict.keys():
+                elif metric.split('_')[0] == 'count' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
                     nobs_used_timeseries = pd.Series(
                         data=np.array(
                             value_arr
@@ -576,7 +613,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                 input_data_frame=True,
                 gsi_it=gsi_stage
             )
-            experiment_metrics_timeseries_data.config_dict['variable_list'] = [var]
+            experiment_metrics_timeseries_data.variable_list = [var]
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
             experiment_metrics_timeseries_data.experiment_list = experiment_list
             experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
