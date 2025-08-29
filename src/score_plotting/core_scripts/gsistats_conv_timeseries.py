@@ -2,35 +2,6 @@ from datetime import datetime
 
 from score_db import score_db_base
 
-def extract_unique_stats(strings):
-    # Create sets to store unique values in the second and last positions
-    first_position_set = set()
-    second_position_set = set()
-    third_position_set = set()
-    last_position_set = set()
-    
-    # Iterate over the set of strings
-    for s in strings:
-        parts = s.split('_')
-        
-        # Add the second and last elements to their respective sets
-        if len(parts) > 1: #and parts[-1] != 'None':  # Ensure there are at least 2 parts, 
-            first_position_set.add("_".join(parts[0:1]))
-            second_position_set.add('_'.join(parts[1:2]))
-            third_position_set.add("_".join(parts[2:3]))
-            last_position_set.add(parts[-1])
-    
-    # Convert sets to sorted lists to maintain a consistent order
-    first_position_list = sorted(list(first_position_set))
-    second_position_list = sorted(list(second_position_set))
-    third_position_list = sorted(list(third_position_set))
-    last_position_list = sorted(list(last_position_set))
-    
-    # Combine the two lists into a 2D array (list of lists)
-    unique_positions = [first_position_list, second_position_list, third_position_list, last_position_list]
-    
-    return unique_positions
-
 def get_data_frame(experiment_list,
                    metric_list,
                    start_date='1979-01-01 00:00:00',
@@ -74,20 +45,25 @@ def get_data_frame(experiment_list,
 
     # sort by timestamp, created at
     data_frame.sort_values(by=['expt_name',
+                               'ensemble_member',
                                'name',
+                               'usage',
                                'time_valid',
                                'created_at'], 
                                inplace=True)
 
     # remove duplicate data
     data_frame.drop_duplicates(subset=['expt_name',
+                                       'ensemble_member',
                                        'name',
-                                       'time_valid'], 
+                                       'usage',
+                                       'time_valid',
+                                       ], 
                                keep='last', inplace=True)
-                               
+
     return data_frame
 
-class SOCADiagsTimeSeries(object):
+class GSIConvTimeSeries(object):
     def __init__(self,
                  start_date,
                  stop_date,
@@ -118,51 +94,29 @@ class SOCADiagsTimeSeries(object):
                 stop_date=stop_date)
         
     def build(self):
-        self.unique_stat_list = extract_unique_stats(
-                                            set(self.data_frame['name']))
         
         self.timestamp_dict = dict()
         self.value_dict = dict()
-        for i, stat_name in enumerate(self.unique_stat_list[0]):
-            for j, var_name in enumerate(self.unique_stat_list[1]):
-                for k, soca_stage in enumerate(self.unique_stat_list[3]):
-                    self.timestamp_dict[f'{stat_name}_{var_name}_{soca_stage}'] = dict()
-                    self.value_dict[f'{stat_name}_{var_name}_{soca_stage}'] = dict()
+
+        for metric in [self.metric_types]:
+            self.timestamp_dict[metric] = dict()
+            self.value_dict[metric] = dict()
                 
         for key in self.value_dict.keys():
             for instrument_name in set(self.data_frame.metric_instrument_name):
-                    sensor_label = f'{instrument_name}'
-                    self.timestamp_dict[key][sensor_label] = list()
-                    self.value_dict[key][sensor_label] = list()        
-        
-        self.sensorlabel_dict = dict()
-        yval = 0
+                if instrument_name is not None:
+                    self.timestamp_dict[key][instrument_name] = dict()
+                    self.value_dict[key][instrument_name] = dict()
+                    
+                    for usage in ['asm', 'mon', 'rej']:
+                        self.timestamp_dict[key][instrument_name][usage] = list()
+                        self.value_dict[key][instrument_name][usage] = list()
         
         for row in self.data_frame.itertuples():
-            metric_name_parts = row.name.split('_')
-
-            if metric_name_parts[2] == row.metric_instrument_name and row.expt_name == self.experiment_name:
-                stat_name = '_'.join(metric_name_parts[0:2])
-                soca_stage = metric_name_parts[-1]
-                
-                stat_label = f'{stat_name}_{soca_stage}'
-                
-                sensor_label = f'{row.metric_instrument_name}'
-                timestamp = row.time_valid#.timestamp()
-                
-                value = row.value
-
-                #print(gsi_stage, stat_name, sensor_label, time_label, value)
-                self.timestamp_dict[stat_label][sensor_label].append(timestamp)
-                #self.timelabel_dict[stat_label][sensor_label].append(time_label)
-                self.value_dict[stat_label][sensor_label].append(value)
-                
-                if not sensor_label in self.sensorlabel_dict.keys():
-                    self.sensorlabel_dict[sensor_label] = yval
-                    yval -= 1
-        
-                #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
+            if row.expt_name == self.experiment_name:
+                self.timestamp_dict[row.name][row.metric_instrument_name][row.usage].append(row.time_valid)
+                self.value_dict[row.name][row.metric_instrument_name][row.usage].append(row.value)
         
     def print_init_time(self):
-        print("SOCADiagsTimeSeries object init date and time: ",
+        print("GSIConvTimeSeries object init date and time: ",
               f"{self.init_datetime}")
