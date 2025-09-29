@@ -43,7 +43,7 @@ def config():
                             'GDAS',
                             'replay_observer_diagnostic_v1',
                             'scout_run_v1',
-                            '3dvar_coupledreanl_scoutrun_1979streamv1_test'
+                            '3dvar_coupledreanl_scoutrun_1979streamv1_test1'
                          ],
         
         'experiment_plot_dict': {
@@ -65,17 +65,22 @@ def config():
             'scout_run_v1' : {
                 'color' : 'black',
                 'ls': '-',
-                'lw': 1.5
+                'lw': 1.
             },
             'replay_observer_diagnostic_overlap' : {
                 'color' : 'black',
                 'ls': '-',
                 'lw': 0.75
             },
-            '3dvar_coupledreanl_scoutrun_1979streamv1_test' : {
+            '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
                 'color' : '#003087',
                 'ls': '-',
                 'lw': 1.25
+            },
+            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+                'color' : '#0085CA',
+                'ls': '-',
+                'lw': 1.5 
             }
         },
         'sensor_list': get_instrument_channels().keys(),
@@ -92,7 +97,8 @@ def config():
                          "GDAS": "GDAS",
                          "replay_observer_diagnostic_v1": "UFS-replay",
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-                         "3dvar_coupledreanl_scoutrun_1979streamv1_test":"weakly coupled scout (3DVar)",
+                         "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
+                         '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
@@ -733,9 +739,9 @@ class GSIRadianceFit2ObsFig(object):
                     plt.show()
                 else:
                     if self.gsi_it ==1:
-                        fig_title=f'gsi_radiance_omb_{sensor}_ch{channel_num}.png'
+                        fig_title=f'gsi_radiance_{sensor}_ch{channel_num}_omb.png'
                     elif self.gsi_it >=2:
-                        fig_title=f'gsi_radiance_oma_{sensor}_ch{channel_num}.png'
+                        fig_title=f'gsi_radiance_{sensor}_ch{channel_num}_oma.png'
                     plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
                 plt.close()
 

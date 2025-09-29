@@ -41,7 +41,8 @@ def config():
             #'GDAS',
             #'replay_observer_diagnostic_v1',
             'scout_run_v1',
-            '3dvar_coupledreanl_scoutrun_1979streamv1_test1'
+            '3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+            '3dvar_coupledreanl_scoutrun_v1_test1'
                          ],
         
         'experiment_plot_dict': {
@@ -63,7 +64,7 @@ def config():
             'scout_run_v1' : {
                 'color' : 'black',
                 'ls': '-',
-                'lw': 1.5
+                'lw': 1.
             },
             'replay_observer_diagnostic_overlap' : {
                 'color' : 'black',
@@ -74,6 +75,11 @@ def config():
                 'color' : '#003087',
                 'ls': '-',
                 'lw': 1.25
+            },
+            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+                'color' : '#0085CA',
+                'ls': '-',
+                'lw': 1.5 
             }
         },
         'sensor_list': [111, 112, 120, 122, 126, 130, 131, 132, 133, 134, 135,
@@ -93,7 +99,7 @@ def config():
             'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
         'start_date': '1978-10-01 00:00:00',
-        'stop_date': '2025-09-30 23:59:59',
+        'stop_date': '1979-09-30 23:59:59',
     }
     
     '''
@@ -106,7 +112,8 @@ def config():
             "GDAS": "GDAS",
             "replay_observer_diagnostic_v1": "UFS-replay",
             "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-            "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled scout (3DVar)",
+            "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
+            '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)"
                          }
                          
     return(config_dict, friendly_names_dict)
@@ -259,7 +266,7 @@ class GSIConvFit2ObsFig(object):
         
         for variable in self.variable_list:
             local_data_frame = self.data_frame[self.data_frame['name'].str.contains(variable)]
-            sensors_to_show = set(local_data_frame.metric_instrument_name)
+            sensors_to_show = sorted(set(local_data_frame.metric_instrument_name))
             nrows = len(sensors_to_show)        
             figsize_length = 4.53 * nrows
             # instantiate figure here    
@@ -362,9 +369,9 @@ class GSIConvFit2ObsFig(object):
                 plt.show()
             else:
                 if self.gsi_it ==1:
-                    fig_title=f'gdas_gsi_conv_asm_omb_{variable}.png'
-                elif self.soca_it >=2:
-                    fig_title=f'gdas_gsi_conv_asm_oma_{variable}.png'
+                    fig_title=f'gdas_gsi_conv_asm_{variable}_omb.png'
+                elif self.gsi_it >=2:
+                    fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
                 plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
             plt.close()
     

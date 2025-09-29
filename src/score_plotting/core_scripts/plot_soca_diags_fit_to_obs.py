@@ -36,7 +36,8 @@ def config():
                          'style_lib'),
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
-        'experiment_list': ['3dvar_coupledreanl_scoutrun_1979streamv1_test1'
+        'experiment_list': ['3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+                            '3dvar_coupledreanl_scoutrun_v1_test1'
                          ],
         
         'experiment_plot_dict': {
@@ -44,6 +45,11 @@ def config():
                 'color' : '#003087',
                 'ls': '-',
                 'lw': 1.25
+            },
+            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+                'color' : '#0085CA',
+                'ls': '-',
+                'lw': 1.5 
             }
         },
         'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],
@@ -56,7 +62,8 @@ def config():
     could this be done by string matching for the std/bias etc part? we could
     have a basic friendly dict for that
     '''
-    friendly_names_dict={"3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled scout (3DVar)",
+    friendly_names_dict={"3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
+                         '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
                          "osd": "ocean station data (OSD)",
                          "xbt": "expendable bathythermograph (XBT)",
                          "ctd": "conductivity-temperature-depth (CTD)",
@@ -370,9 +377,9 @@ class SOCADiagsFit2ObsFig(object):
                 plt.show()
             else:
                 if self.soca_it ==1:
-                    fig_title=f'gdas_ocean_omb_{variable}.png'
+                    fig_title=f'gdas_ocean_{variable}_omb.png'
                 elif self.soca_it >=2:
-                    fig_title=f'gdas_ocean_oma_{variable}.png'
+                    fig_title=f'gdas_ocean_{variable}_oma.png'
                 plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
             plt.close()
     
