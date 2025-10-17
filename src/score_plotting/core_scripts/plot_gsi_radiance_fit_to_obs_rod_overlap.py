@@ -9,6 +9,7 @@ from score_plotting.core_scripts import plot_gsi_radiance_fit_to_obs
 def main():
     plot_gsi_radiance_fit_to_obs.prun(
         experiment_list=[
+            'cfsr',
             'NASA_GEOSIT_GSISTATS',
             'GDAS',
             'replay_observer_diagnostic_v1',

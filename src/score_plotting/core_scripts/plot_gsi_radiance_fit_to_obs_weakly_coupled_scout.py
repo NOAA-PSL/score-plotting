@@ -12,6 +12,7 @@ def main():
             #'NASA_GEOSIT_GSISTATS',
             #'GDAS',
             #'replay_observer_diagnostic_v1',
+            'cfsr',
             'scout_run_v1',
             '3dvar_coupledreanl_scoutrun_1979streamv1_test1',
             '3dvar_coupledreanl_scoutrun_v1_test1'

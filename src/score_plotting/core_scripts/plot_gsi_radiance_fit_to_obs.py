@@ -39,7 +39,8 @@ def config():
                          'style_lib'),
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
-        'experiment_list': ['NASA_GEOSIT_GSISTATS',
+        'experiment_list': ['cfsr',
+                            'NASA_GEOSIT_GSISTATS',
                             'GDAS',
                             'replay_observer_diagnostic_v1',
                             'scout_run_v1',
@@ -47,6 +48,12 @@ def config():
                          ],
         
         'experiment_plot_dict': {
+            'cfsr' :
+                {'color' : '#003087',
+                'ls': '-',
+                'lw': 1.25
+            },
+            
             'NASA_GEOSIT_GSISTATS' :
                 {'color' : '#E4002B',
                  'ls': '-',
@@ -73,12 +80,12 @@ def config():
                 'lw': 0.75
             },
             '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
-                'color' : '#003087',
+                'color' : '#565A5C',
                 'ls': '-',
                 'lw': 1.25
             },
             '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#0085CA',
+                'color' : '#8D7334',
                 'ls': '-',
                 'lw': 1.5 
             }
@@ -92,7 +99,8 @@ def config():
     could this be done by string matching for the std/bias etc part? we could
     have a basic friendly dict for that
     '''
-    friendly_names_dict={"scout_run_v1": "atmosphere scout (3DVar)",
+    friendly_names_dict={'cfsr': "CFSR",
+                         "scout_run_v1": "atmosphere scout (3DVar)",
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
                          "replay_observer_diagnostic_v1": "UFS-replay",
