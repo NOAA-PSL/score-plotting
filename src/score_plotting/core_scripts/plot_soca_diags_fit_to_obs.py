@@ -377,9 +377,11 @@ class SOCADiagsFit2ObsFig(object):
                 plt.show()
             else:
                 if self.soca_it ==1:
-                    fig_title=f'gdas_ocean_{variable}_omb.png'
+                    #fig_title=f'gdas_ocean_{variable}_omb.png'
+                    fig_title=f'gdas_ocean_omb_{variable}.png'
                 elif self.soca_it >=2:
-                    fig_title=f'gdas_ocean_{variable}_oma.png'
+                    #fig_title=f'gdas_ocean_{variable}_oma.png'
+                    fig_title=f'gdas_ocean_oma_{variable}.png'
                 plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
             plt.close()
     

@@ -747,9 +747,11 @@ class GSIRadianceFit2ObsFig(object):
                     plt.show()
                 else:
                     if self.gsi_it ==1:
-                        fig_title=f'gsi_radiance_{sensor}_ch{channel_num}_omb.png'
+                        #fig_title=f'gsi_radiance_{sensor}_ch{channel_num}_omb.png'
+                        fig_title=f'gsi_radiance_omb_{sensor}_ch{channel_num}.png'
                     elif self.gsi_it >=2:
-                        fig_title=f'gsi_radiance_{sensor}_ch{channel_num}_oma.png'
+                        #fig_title=f'gsi_radiance_{sensor}_ch{channel_num}_oma.png'
+                        fig_title=f'gsi_radiance_oma_{sensor}_ch{channel_num}.png'
                     plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
                 plt.close()
 
