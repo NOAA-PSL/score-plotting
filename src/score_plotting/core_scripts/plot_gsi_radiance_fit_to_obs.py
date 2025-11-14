@@ -49,7 +49,7 @@ def config():
         
         'experiment_plot_dict': {
             'cfsr' :
-                {'color' : '#003087',
+               {'color' : '#003087',
                 'ls': '-',
                 'lw': 1.25
             },
@@ -57,37 +57,37 @@ def config():
             'NASA_GEOSIT_GSISTATS' :
                 {'color' : '#E4002B',
                  'ls': '-',
-                 'lw': 1.5
+                 'lw': 1.25
             },
             'GDAS' : {
-                'color' : '#003087',
+                'color' : '#0085CA',
                 'ls': '-',
                 'lw': 1.25
             },
             'replay_observer_diagnostic_v1' : {
-                'color' : '#0085CA',
-                'ls': '-',
-                'lw': 1.
-            },
-            'scout_run_v1' : {
-                'color' : 'black',
-                'ls': '-',
-                'lw': 1.
-            },
-            'replay_observer_diagnostic_overlap' : {
                 'color' : 'black',
                 'ls': '-',
                 'lw': 0.75
             },
-            '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
+            'scout_run_v1' : {
                 'color' : '#565A5C',
                 'ls': '-',
-                'lw': 1.25
+                'lw': 1.
+            },
+            'replay_observer_diagnostic_overlap' : {
+                'color' : '#8D7334',
+                'ls': '-',
+                'lw': 0.75
+            },
+            '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
+                'color' : '#A2A4A3',
+                'ls': '-',
+                'lw': 1.5
             },
             '3dvar_coupledreanl_scoutrun_v1_test1' : {
                 'color' : '#8D7334',
                 'ls': '-',
-                'lw': 1.5 
+                'lw': 0.75 
             }
         },
         'sensor_list': get_instrument_channels().keys(),
