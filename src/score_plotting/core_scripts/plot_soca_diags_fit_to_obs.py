@@ -42,14 +42,14 @@ def config():
         
         'experiment_plot_dict': {
             '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
-                'color' : '#003087',
+                'color' : '#A2A4A3',
                 'ls': '-',
-                'lw': 1.25
+                'lw': 1.5
             },
             '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#0085CA',
+                'color' : '#8D7334',
                 'ls': '-',
-                'lw': 1.5 
+                'lw': 0.75 
             }
         },
         'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],

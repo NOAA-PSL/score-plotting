@@ -22,7 +22,7 @@ def main():
             'hirs3',
             'hirs4',
             'ssu',
-            'msu'
+            'msu',
             # Advanced Very-High-Resolution Radiometers:
             'avhrr2',
             'avhrr3'

@@ -44,7 +44,8 @@ def config():
                             'GDAS',
                             'replay_observer_diagnostic_v1',
                             'scout_run_v1',
-                            '3dvar_coupledreanl_scoutrun_1979streamv1_test1'
+                            '3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+                            '3dvar_coupledreanl_scoutrun_v1_test1'
                          ],
         
         'experiment_plot_dict': {

@@ -180,8 +180,8 @@ plot_control_dict_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      'work_dir': parse_arguments().figure_output_path}
 
 plot_control_dict_weakly_coupled_scout = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
-                                    'end': '1979-02-01 00:00:00',
-                                    'start': '1979-01-01 00:00:00'},
+                                    'end': '2026-09-30 23:59:59',
+                                    'start': '1978-10-01 00:00:00'},
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',

@@ -18,27 +18,8 @@ def main():
             '3dvar_coupledreanl_scoutrun_v1_test1'
         ],
         start_date='1978-10-01 00:00:00',
-        stop_date='2026-09-30 23:59:59',
-        sensor_list = [
-            # microwave sounders:
-            'amsua',
-            'amsub',
-            'atms',
-            'ssmi',
-            'ssmis',
-            # infrared sounders:
-            'airs',
-            # TIROS operational vertical sounders (TOVS):
-            'hirs2',
-            'hirs3',
-            'hirs4',
-            'ssu',
-            'msu',
-            # Advanced Very-High-Resolution Radiometers:
-            'avhrr2',
-            'avhrr3'
-        ]
-        )
+        stop_date='2026-09-30 23:59:59'
+    )
 
 if __name__=='__main__':
     main()
