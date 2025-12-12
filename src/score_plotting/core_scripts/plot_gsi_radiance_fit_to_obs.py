@@ -52,20 +52,20 @@ def config():
             'cfsr' :
                {'color' : '#003087',
                 'ls': '-',
-                'lw': 1.25
+                'lw': 1.
             },
             
             'NASA_GEOSIT_GSISTATS' :
                 {'color' : '#E4002B',
                  'ls': '-',
-                 'lw': 1.25
+                 'lw': 1.
             },
             'GDAS' : {
                 'color' : '#0085CA',
                 'ls': '-',
-                'lw': 1.25
+                'lw': 1.
             },
-            'replay_observer_diagnostic_v1' : {
+            'replay_observer_diagnostic_v1.1' : {
                 'color' : 'black',
                 'ls': '-',
                 'lw': 0.75
@@ -93,7 +93,7 @@ def config():
         },
         'sensor_list': get_instrument_channels().keys(),
         'start_date': '1978-10-01 00:00:00',
-        'stop_date': '2025-09-30 23:59:59',
+        'stop_date': '2026-09-30 23:59:59',
     }
     
     '''
@@ -104,7 +104,7 @@ def config():
                          "scout_run_v1": "atmosphere scout (3DVar)",
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
-                         "replay_observer_diagnostic_v1": "UFS-replay",
+                         "replay_observer_diagnostic_v1.1": "UFS-replay",
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
                          "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
                          '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
@@ -158,6 +158,19 @@ def parse_arguments():
         help="Enable dark theme (default is False)"
     )
     
+    parser.add_argument(
+        '--yaxis_obs_err_scaler',
+        type=float,
+        default=3.,
+        help='Scale vertical limits of bias and RMSE plots by this amount (times the maximum obs error)',
+        
+    )
+    parser.add_argument(
+        '--rmse_legend',
+        action='store_true',
+        help='Enable RMSE legend'
+    )
+    
     args = parser.parse_args()
 
     return args
@@ -198,6 +211,7 @@ class GSIRadianceFit2ObsFig(object):
         self.gsi_it = int(gsi_it)
         self.config_dict, self.friendly_names_dict = config()
         self.channel_dict = get_instrument_channels()
+        self.channels_to_plot = self.channel_dict
         self.sensor_longnames = get_instrument_longnames()
         self.experiment_list = self.config_dict['experiment_list']
                 
@@ -255,10 +269,14 @@ class GSIRadianceFit2ObsFig(object):
     def build_timeseries(self, interactive_figure=False,
                          da_cycle = 6., # hours
                          days_to_smooth = 1., # days
-                         dark_theme=False):
+                         dark_theme=False,
+                         yaxis_obs_err_scaler=3.,
+                         rmse_legend=False):
         self.dark_theme = dark_theme
         self.da_cycle = da_cycle
         self.config_figure_params(days_to_smooth=days_to_smooth)
+        self.yaxis_obs_err_scaler = yaxis_obs_err_scaler
+        self.rmse_legend=rmse_legend
         
         for sensor, channel_list in self.channel_dict.items():
             if sensor in self.config_dict['sensor_list']:
@@ -325,7 +343,8 @@ class GSIRadianceFit2ObsFig(object):
                     for sat_sensor in value_dict.keys():
                        sat_set.add(sat_sensor)
         
-        for channel_idx, channel_num in enumerate(self.channel_dict[sensor]):
+        for i, channel_num in enumerate(self.channels_to_plot[sensor]):
+            channel_idx = np.argmin(np.abs(np.array(self.channel_dict[sensor]) - channel_num))
             if len(sat_set) > 0:
                 max_yerr=0.5 # temperature (K)
                 figsize_width = 2 * 3.74 * ncols
@@ -610,7 +629,8 @@ class GSIRadianceFit2ObsFig(object):
                                         zorder=3
                                     )
                                     
-                                    #axes[row,1].legend(loc='lower right')
+                                    if self.rmse_legend:
+                                        axes[row,1].legend(loc='lower left')
                             
                                 elif stat_label == f'nobs_used_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
                                     """ nobs tossed and rejection ratio plot
@@ -705,37 +725,54 @@ class GSIRadianceFit2ObsFig(object):
                         #experiment_idx += 1
                 
                 for row, sat_sensor in enumerate(sorted(sat_set)):
-                    # set ylim, ticks
-                    if max_yerr < 1:
+                    # set ylim, ticks                        
+                    if self.yaxis_obs_err_scaler < 3.:
                         axes[row, 0].set_yticks(
-                            np.arange(np.around(-0.5 * max_yerr - 0.2, decimals=1),
-                                      0.5 * max_yerr + 0.2,
+                            np.arange(np.around((-self.yaxis_obs_err_scaler/6.) * max_yerr - 0.2, decimals=1),
+                                      (self.yaxis_obs_err_scaler/6.) * max_yerr + 0.2,
+                                      0.01),
+                        )
+                    
+                    elif max_yerr < 1:
+                        axes[row, 0].set_yticks(
+                            np.arange(np.around((-self.yaxis_obs_err_scaler/6.) * max_yerr - 0.2, decimals=1),
+                                      (self.yaxis_obs_err_scaler/6.) * max_yerr + 0.2,
                                       0.1),
                         )
                     else:
                         axes[row, 0].set_yticks(
-                            np.arange(np.around(-0.5 * max_yerr - 1),
-                                      0.5 * max_yerr + 1,
+                            np.arange(np.around((-self.yaxis_obs_err_scaler/6.) * max_yerr - 1),
+                                      (self.yaxis_obs_err_scaler/6.) * max_yerr + 1,
                                       0.5),
                         )
                         axes[row, 0].set_yticks(
-                            np.arange(np.around(-0.5 * max_yerr - 0.2, decimals=1),
-                                      0.5 * max_yerr + 0.2,
+                            np.arange(np.around((-self.yaxis_obs_err_scaler/6.) * max_yerr - 0.2, decimals=1),
+                                      (self.yaxis_obs_err_scaler/6.) * max_yerr + 0.2,
                                       0.1),
                                       minor=True
                     )
                     
-                    axes[row, 1].set_yticks(
-                        np.arange(0, 3. * max_yerr + 0.1, 0.1),
-                        minor=True
-                    )
+                    if self.yaxis_obs_err_scaler < 3.:
+                        axes[row, 1].set_yticks(
+                            np.arange(0, self.yaxis_obs_err_scaler * max_yerr + 0.1, 0.01),
+                            minor=True
+                        )
                     
-                    axes[row, 1].set_yticks(
-                        np.arange(0, 3. * max_yerr + 1, 0.5)
-                    )
+                        axes[row, 1].set_yticks(
+                            np.arange(0, self.yaxis_obs_err_scaler * max_yerr + 1, 0.1)
+                        )
+                    else:
+                        axes[row, 1].set_yticks(
+                            np.arange(0, self.yaxis_obs_err_scaler * max_yerr + 0.1, 0.1),
+                            minor=True
+                        )
                     
-                    axes[row, 0].set_ylim(-0.5*max_yerr, 0.5*max_yerr)
-                    axes[row, 1].set_ylim(0, 3.*max_yerr)
+                        axes[row, 1].set_yticks(
+                            np.arange(0, self.yaxis_obs_err_scaler * max_yerr + 1, 0.5)
+                        )
+                    
+                    axes[row, 0].set_ylim((-self.yaxis_obs_err_scaler/6.)*max_yerr, (self.yaxis_obs_err_scaler/6.)*max_yerr)
+                    axes[row, 1].set_ylim(0, self.yaxis_obs_err_scaler*max_yerr)
                     
                     nobs_ylims = axes[row, 2].get_ylim()
                     if nobs_ylims[0] < 0:
@@ -866,7 +903,7 @@ def prun(experiment_list=None, sensor_list=None, start_date=None, stop_date=None
                 gsi_it=gsi_it
             )
             if args.channel != 9999:
-                experiment_metrics_timeseries_data.channel_dict = {sensor: [args.channel]}
+                experiment_metrics_timeseries_data.channels_to_plot = {sensor: [args.channel]}
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = [sensor]
             experiment_metrics_timeseries_data.experiment_list = experiment_list
             experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
@@ -874,7 +911,9 @@ def prun(experiment_list=None, sensor_list=None, start_date=None, stop_date=None
             experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
                                                                 days_to_smooth=args.days_to_smooth,
                                                                 da_cycle=args.da_cycle,
-                                                                dark_theme=args.dark_theme)
+                                                                dark_theme=args.dark_theme,
+                                                                yaxis_obs_err_scaler = args.yaxis_obs_err_scaler,
+                                                                rmse_legend=args.rmse_legend)
 
 def main():
     """
