@@ -12,7 +12,7 @@ def main():
             'cfsr',
             'GDAS',
             'replay_observer_diagnostic_v1.1',
-            'scout_run_v1'
+            #'scout_run_v1'
         ],
         sensor_list=['amsua']
     )
