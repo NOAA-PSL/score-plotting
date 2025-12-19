@@ -39,9 +39,9 @@ def config():
                          'style_lib'),
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
-        'experiment_list': ['cfsr',
+        'experiment_list': ['GDAS',
+                            'cfsr',
                             'NASA_GEOSIT_GSISTATS',
-                            'GDAS',
                             'replay_observer_diagnostic_v1',
                             'scout_run_v1',
                             '3dvar_coupledreanl_scoutrun_1979streamv1_test1',
@@ -50,7 +50,7 @@ def config():
         
         'experiment_plot_dict': {
             'cfsr' :
-               {'color' : 'black',
+               {'color' : '#A2A4A3',
                 'ls': '-',
                 'lw': 0.5
             },
@@ -61,7 +61,7 @@ def config():
                  'lw': 1.
             },
             'GDAS' : {
-                'color' : '#565A5C',
+                'color' : '#0A3758',
                 'ls': '-',
                 'lw': 0.5
             },

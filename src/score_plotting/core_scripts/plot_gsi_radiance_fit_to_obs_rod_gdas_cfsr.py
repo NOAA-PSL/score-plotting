@@ -9,8 +9,8 @@ from score_plotting.core_scripts import plot_gsi_radiance_fit_to_obs
 def main():
     plot_gsi_radiance_fit_to_obs.prun(
         experiment_list=[
-            'cfsr',
             'GDAS',
+            'cfsr',
             'replay_observer_diagnostic_v1.1',
             #'scout_run_v1'
         ],
