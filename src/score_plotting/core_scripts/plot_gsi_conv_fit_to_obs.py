@@ -111,7 +111,7 @@ def config():
             "scout_run_v1": "atmosphere scout (3DVar)",
             "NASA_GEOSIT_GSISTATS": "GEOS-IT",
             "GDAS": "GDAS",
-            "replay_observer_diagnostic_v1": "UFS-replay",
+            "replay_observer_diagnostic_v1.1": "UFS-replay",
             "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
             "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
             '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)"
@@ -433,9 +433,12 @@ class GSIConvFit2ObsFig(object):
                      alpha_foreground=0.9,
                      alpha_background=0.5,):
         
+        exp_comp_dict = dict()
         experiment_idx = 0
         for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
+            exp_comp_dict[experiment_idx] = dict()
             for metric, timeseries_data in timeseries_dict.items():
+                exp_comp_dict[experiment_idx][metric] = dict()
                 if sensor in timeseries_data.timestamp_dict[metric].keys():
                     value_arr = timeseries_data.value_dict[metric][sensor]['asm']
                     timestamp_arr = timeseries_data.timestamp_dict[metric][sensor]['asm']
@@ -474,7 +477,8 @@ class GSIConvFit2ObsFig(object):
                     ).mean()
                         
                     if self.array:
-                        vmax = np.nanmax(np.abs(mean_values_smooth))
+                        exp_comp_dict[experiment_idx][metric][sensor]={'expname':experiment,'values':bias_timeseries}
+                        vmax = np.nanquantile(np.abs(mean_values_smooth.values), 0.97725)
                         pcmesh = self.axes[axes_row + experiment_idx, 0].pcolormesh(
                             self.time_domain_bnds.index,
                             plevs_bnds,
@@ -489,12 +493,42 @@ class GSIConvFit2ObsFig(object):
                         self.axes[axes_row + experiment_idx, 0].invert_yaxis()
                         self.axes[axes_row + experiment_idx, 0].set_yticks(plevs_bnds[1:])
                         self.axes[axes_row + experiment_idx, 0].get_yaxis().set_major_formatter(plt.ScalarFormatter())
-                        self.axes[axes_row + experiment_idx, 0].set_ylabel(f'{experiment}\npressure (hPa)')
+                        self.axes[axes_row + experiment_idx, 0].set_ylabel(f'{self.friendly_names_dict[experiment]}\npressure (hPa)')
                         
                         fig = self.axes[axes_row + experiment_idx, 0].get_figure()
                         cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row + experiment_idx, 0])
                         cbar.set_label(f'mean {metric_long_name}')
-                    
+                        
+                        if experiment_idx == 1:
+                            diffs = exp_comp_dict[experiment_idx-1][metric][sensor]['values'] - exp_comp_dict[experiment_idx][metric][sensor]['values']
+                            values_to_plot = diffs.rolling(
+                                window=self.window_size,
+                                min_periods=self.min_periods,
+                                center=True
+                            ).mean()
+                            label_to_show = f'{self.friendly_names_dict[exp_comp_dict[experiment_idx-1][metric][sensor]["expname"]]} - {self.friendly_names_dict[exp_comp_dict[experiment_idx][metric][sensor]["expname"]]}'
+                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
+                            pcmesh = self.axes[axes_row+ 1 + experiment_idx, 0].pcolormesh(
+                                self.time_domain_bnds.index,
+                                plevs_bnds,
+                                values_to_plot.values[:,:-1].T,
+                                cmap=cc.cm.CET_D1A_r,
+                                vmax = vmax,
+                                vmin = -vmax,
+                                shading='flat',
+                                rasterized=True,
+                                )
+                            self.axes[axes_row+1 + experiment_idx, 0].set_yscale('log')
+                            self.axes[axes_row+1 + experiment_idx, 0].invert_yaxis()
+                            self.axes[axes_row+1 + experiment_idx, 0].set_yticks(plevs_bnds[1:])
+                            self.axes[axes_row+1 + experiment_idx, 0].get_yaxis().set_major_formatter(plt.ScalarFormatter())
+                            self.axes[axes_row+1 + experiment_idx, 0].set_ylabel(f'{label_to_show}\npressure (hPa)')
+                        
+                            fig = self.axes[axes_row+1 + experiment_idx, 0].get_figure()
+                            cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row+1 + experiment_idx, 0])
+                            cbar.set_label(f'mean {metric_long_name}')
+                        elif experiment_idx > 1:
+                            warnings.warn("inter-experiment differences not supported for more than two experiments")
                     else:
                     
                         self.axes[axes_row, 0].plot(
@@ -555,7 +589,8 @@ class GSIConvFit2ObsFig(object):
                     ).mean()
                     
                     if self.array:
-                        vmax = np.nanmax(np.abs(rmse_values_smooth))
+                        exp_comp_dict[experiment_idx][metric][sensor] = {'expname':experiment,'values':rmse_timeseries}
+                        vmax = np.nanquantile(np.abs(rmse_values_smooth.values), 0.97725)
                         pcmesh = self.axes[axes_row + experiment_idx, 1].pcolormesh(
                             self.time_domain_bnds.index,
                             plevs_bnds,
@@ -574,6 +609,37 @@ class GSIConvFit2ObsFig(object):
                         fig = self.axes[axes_row + experiment_idx, 1].get_figure()
                         cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row + experiment_idx, 1])
                         cbar.set_label(f'RMS {metric_long_name}')
+                        
+                        if experiment_idx == 1:
+                            diffs = exp_comp_dict[experiment_idx-1][metric][sensor]['values'] - exp_comp_dict[experiment_idx][metric][sensor]['values']
+                            values_to_plot = diffs.rolling(
+                                window=self.window_size,
+                                min_periods=self.min_periods,
+                                center=True,
+                            ).mean()
+                            label_to_show = f'{self.friendly_names_dict[exp_comp_dict[experiment_idx-1][metric][sensor]["expname"]]} - {self.friendly_names_dict[exp_comp_dict[experiment_idx][metric][sensor]["expname"]]}'
+                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
+                            pcmesh = self.axes[axes_row+ 1 + experiment_idx, 1].pcolormesh(
+                                self.time_domain_bnds.index,
+                                plevs_bnds,
+                                values_to_plot.values[:,:-1].T,
+                                cmap=cc.cm.CET_D1A_r,
+                                vmax = vmax,
+                                vmin = -vmax,
+                                shading='flat',
+                                rasterized=True,
+                                )
+                            self.axes[axes_row+1 + experiment_idx, 1].set_yscale('log')
+                            self.axes[axes_row+1 + experiment_idx, 1].invert_yaxis()
+                            self.axes[axes_row+1 + experiment_idx, 1].set_yticks(plevs_bnds[1:])
+                            self.axes[axes_row+1 + experiment_idx, 1].get_yaxis().set_major_formatter(plt.ScalarFormatter())
+                        
+                            fig = self.axes[axes_row+1 + experiment_idx, 1].get_figure()
+                            cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row+1 + experiment_idx, 1])
+                            cbar.set_label(f'RMS {metric_long_name}')
+                        elif experiment_idx > 1:
+                            warnings.warn("inter-experiment differences not supported for more than two experiments")
+                        
                     else:
                         self.axes[axes_row, 1].plot(
                             rmse_timeseries.index,
@@ -629,12 +695,13 @@ class GSIConvFit2ObsFig(object):
                     ).mean()
                         
                     if self.array:
-                        vmax = np.nanmax(np.abs(nobs_used_smooth))
+                        exp_comp_dict[experiment_idx][metric][sensor] = {'expname':experiment,'values':nobs_used_timeseries}
+                        vmax = np.nanquantile(np.abs(nobs_used_smooth.values), 0.97725)
                         pcmesh = self.axes[axes_row + experiment_idx, 2].pcolormesh(
                             self.time_domain_bnds.index,
                             plevs_bnds,
                             nobs_used_smooth.values[:,:-1].T,
-                            cmap=cc.cm.CET_L1_r,
+                            cmap=cc.cm.CET_CBL4_r,
                             vmax = vmax,
                             vmin = 0,
                             shading='flat',
@@ -648,6 +715,37 @@ class GSIConvFit2ObsFig(object):
                         fig = self.axes[axes_row + experiment_idx, 2].get_figure()
                         cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row + experiment_idx, 2])
                         cbar.set_label(f'Number of obs assimilated')
+                        
+                        if experiment_idx == 1:
+                            diffs = exp_comp_dict[experiment_idx-1][metric][sensor]['values'] - exp_comp_dict[experiment_idx][metric][sensor]['values']
+                            values_to_plot = diffs.rolling(
+                                window=self.window_size,
+                                min_periods=self.min_periods,
+                                center=True,
+                            ).mean()
+                            label_to_show = f'{self.friendly_names_dict[exp_comp_dict[experiment_idx-1][metric][sensor]["expname"]]} - {self.friendly_names_dict[exp_comp_dict[experiment_idx][metric][sensor]["expname"]]}'
+                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
+                            pcmesh = self.axes[axes_row+ 1 + experiment_idx, 2].pcolormesh(
+                                self.time_domain_bnds.index,
+                                plevs_bnds,
+                                values_to_plot.values[:,:-1].T,
+                                cmap=cc.cm.CET_D7,
+                                vmax = vmax,
+                                vmin = -vmax,
+                                shading='flat',
+                                rasterized=True,
+                                )
+                            self.axes[axes_row+1 + experiment_idx, 2].set_yscale('log')
+                            self.axes[axes_row+1 + experiment_idx, 2].invert_yaxis()
+                            self.axes[axes_row+1 + experiment_idx, 2].set_yticks(plevs_bnds[1:])
+                            self.axes[axes_row+1 + experiment_idx, 2].get_yaxis().set_major_formatter(plt.ScalarFormatter())
+                        
+                            fig = self.axes[axes_row+1 + experiment_idx, 2].get_figure()
+                            cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row+1 + experiment_idx, 2])
+                            cbar.set_label(f'Number of obs assimilated')
+                        elif experiment_idx > 1:
+                            warnings.warn("inter-experiment differences not supported for more than two experiments")
+                        
                     else:
                         self.axes[axes_row, 2].plot(
                             nobs_used_timeseries.index,
@@ -675,7 +773,7 @@ class GSIConvFit2ObsFig(object):
                             label=f"{self.friendly_names_dict[experiment]}",
                             zorder=3)
             
-            experiment_idx += 1
+            experiment_idx += 1                
 
 def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=None, stop_date=None):
     args = parse_arguments()
