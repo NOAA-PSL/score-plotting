@@ -12,6 +12,7 @@ from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
+import colorcet as cc
 import pandas as pd
 from mpi4py import MPI
 
@@ -39,9 +40,9 @@ def config():
         'experiment_list': [
             #'NASA_GEOSIT_GSISTATS',
             #'GDAS',
-            #'replay_observer_diagnostic_v1',
-            'scout_run_v1',
-            '3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+            'replay_observer_diagnostic_v1.1',
+            #'scout_run_v1',
+            #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
             '3dvar_coupledreanl_scoutrun_v1_test1'
                          ],
         
@@ -151,6 +152,8 @@ def parse_arguments():
     parser.add_argument('--days_to_smooth', type=float, default=8.,
                         help='Number of days to smooth (default: 8.0)')
                         
+    parser.add_argument('--pressure_bins', action='store_true',help="analyze array metrics by pressure bins")
+                        
     parser.add_argument(
         '--dark_theme', 
         action='store_true',  # If this argument is provided, dark_theme will be True
@@ -163,8 +166,9 @@ def parse_arguments():
 
 def get_data_frame(experiment_list, sensor_list, variable_list,
                    start_date='1978-10-01 00:00:00',
-                   stop_date='2025-09-30 23:59:59',
-                   gsi_it=1):
+                   stop_date='2026-09-30 23:59:59',
+                   gsi_it=1,
+                   pressure_bins=False):
         
     gsi_it = int(gsi_it)
     
@@ -179,16 +183,18 @@ def get_data_frame(experiment_list, sensor_list, variable_list,
                                                 experiment_list,
                                                 metric_list,
                                                 start_date=start_date,
-                                                stop_date=stop_date)
+                                                stop_date=stop_date,
+                                                array=pressure_bins)
 
 class GSIConvFit2ObsFig(object):
     """
     """
     def __init__(self, data_frame=None, input_data_frame=False,
-                 gsi_it=1):
+                 gsi_it=1, pressure_bins=False):
         """
         """
         self.gsi_it = int(gsi_it)
+        self.array = pressure_bins
         self.config_dict, self.friendly_names_dict = config()
         self.experiment_list = self.config_dict['experiment_list']
         self.sensor_list = self.config_dict['sensor_list']
@@ -200,7 +206,8 @@ class GSIConvFit2ObsFig(object):
             self.data_frame = get_data_frame(self.experiment_list,
                                              self.config_dict['start_date'],
                                              self.config_dict['stop_date'],
-                                             gsi_it=self.gsi_it)
+                                             gsi_it=self.gsi_it,
+                                             pressure_bins=self.array)
     
     def config_figure_params(self, days_to_smooth=1.):
         if self.config_dict['config_path'] and self.config_dict['config_file']:
@@ -232,168 +239,229 @@ class GSIConvFit2ObsFig(object):
             np.around(days_to_smooth * (HOURS_PER_DAY / self.da_cycle))
         )        
         
-        self.time_domain = pd.Series(
-            data = np.nan,
-            index = pd.date_range(
-                start = datetime.strptime(
-                    self.config_dict['start_date'], '%Y-%m-%d %H:%M:%S'
-                ),
-                end = datetime.strptime(
-                    self.config_dict['stop_date'], '%Y-%m-%d %H:%M:%S'
-                ),
-                freq = pd.Timedelta(hours = self.da_cycle)
+        if self.array:
+            self.time_domain = pd.DataFrame(
+                index = pd.date_range(
+                    start = datetime.strptime(
+                        self.config_dict['start_date'], '%Y-%m-%d %H:%M:%S'
+                    ),
+                    end = datetime.strptime(
+                        self.config_dict['stop_date'], '%Y-%m-%d %H:%M:%S'
+                    ),
+                    freq = pd.Timedelta(hours = self.da_cycle)
+                )
             )
-        )
+            
+            self.time_domain_bnds = pd.DataFrame(
+                    index = pd.date_range(
+                        start = datetime.strptime(
+                            self.config_dict['start_date'], '%Y-%m-%d %H:%M:%S'
+                        ) - pd.Timedelta(hours = self.da_cycle/2.),
+                        end = datetime.strptime(
+                            self.config_dict['stop_date'], '%Y-%m-%d %H:%M:%S'
+                        ) + pd.Timedelta(hours = self.da_cycle/2.),
+                        freq = pd.Timedelta(hours = self.da_cycle)
+                    )
+                )
+        else:
+            self.time_domain = pd.Series(
+                data = np.nan,
+                index = pd.date_range(
+                    start = datetime.strptime(
+                        self.config_dict['start_date'], '%Y-%m-%d %H:%M:%S'
+                    ),
+                    end = datetime.strptime(
+                        self.config_dict['stop_date'], '%Y-%m-%d %H:%M:%S'
+                    ),
+                    freq = pd.Timedelta(hours = self.da_cycle)
+                )
+            )
     
     def build_timeseries(self, interactive_figure=False, ncols=3,
                          da_cycle = 6., # hours
                          days_to_smooth = 1., # days
                          dark_theme=False):
+        if self.array:
+            metric_name_key = 'metric_name'
+        else:
+            metric_name_key = 'name'
+        
         self.dark_theme = dark_theme
         self.da_cycle = da_cycle
         self.config_figure_params(days_to_smooth=days_to_smooth)
         figsize_width = 2 * 3.74 * ncols
             
         output_dir = self.config_dict['output_path']
-        locator = mdates.AutoDateLocator(minticks=8, maxticks=16)
-        formatter = mdates.ConciseDateFormatter(locator)
         
-        month_locator = mdates.MonthLocator(interval=1)
+        self.locator = mdates.AutoDateLocator(minticks=8, maxticks=12)
+        self.formatter = mdates.ConciseDateFormatter(self.locator)
+        self.month_locator = mdates.MonthLocator(interval=3)
         
         # Check if the directory exists, and create it if it doesn't
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
         for variable in self.variable_list:
-            local_data_frame = self.data_frame[self.data_frame['name'].str.contains(variable)]
+            local_data_frame = self.data_frame[self.data_frame[metric_name_key].str.contains(variable)]
             sensors_to_show = sorted(set(local_data_frame.metric_instrument_name))
             nrows = len(sensors_to_show)        
-            figsize_length = 4.53 * nrows
-            # instantiate figure here    
-            self.fig, self.axes = plt.subplots(nrows, ncols, sharex=True,sharey=False,
-                                     squeeze=False,
-                                     figsize=(figsize_width, figsize_length))
             
-            axes_row = 0
-            for sensor in sensors_to_show:
+            if nrows > 0:
+                
+                if self.array:
+                   iterator = (len(self.experiment_list) * (len(self.experiment_list)  + 1)) // 2
+                   nrows *= iterator
+                else:
+                    iterator = 1
+                figsize_length = 4.53 * nrows
+                # instantiate figure here    
+                self.fig, self.axes = plt.subplots(nrows, ncols, sharex=True,sharey=False,
+                                        squeeze=False,
+                                        figsize=(figsize_width, figsize_length))
+            
+                axes_row = 0
+                for sensor in sensors_to_show:
     
-                self.max_yerr=0.
-                if variable in self.variable_list and sensor is not None:
-                    experiment_timeseries_datetime_init=None
+                    self.max_yerr=0.
+                    if variable in self.variable_list and sensor is not None:
+                        experiment_timeseries_datetime_init=None
                     
-                    data_frame_to_show = local_data_frame[local_data_frame.metric_instrument_name==sensor]
+                        data_frame_to_show = local_data_frame[local_data_frame.metric_instrument_name==sensor]
                     
-                    metric_list = set(data_frame_to_show.name)
-                                     
-                    self.experiment_timeseries_dict = dict()
-                    for experiment in self.experiment_list:
-                        self.experiment_timeseries_dict[experiment] = dict()
-                        for metric in metric_list:
-                            try:
-                                self.experiment_timeseries_dict[
-                                    experiment][metric] = gsistats_conv_timeseries.GSIConvTimeSeries(
-                                                    self.config_dict['start_date'],
-                                                    self.config_dict['stop_date'],
-                                                    data_frame=data_frame_to_show,
-                                                    input_data_frame=True,
-                                                    experiment_name=experiment,
-                                                    metric_types=metric)
+                        metric_list = set(data_frame_to_show[metric_name_key])
+                        self.experiment_timeseries_dict = dict()
+                        for experiment in self.experiment_list:
+                            self.experiment_timeseries_dict[experiment] = dict()
+                            for metric in metric_list:
+                                try:
+                                    self.experiment_timeseries_dict[
+                                        experiment][metric] = gsistats_conv_timeseries.GSIConvTimeSeries(
+                                                        self.config_dict['start_date'],
+                                                        self.config_dict['stop_date'],
+                                                        data_frame=data_frame_to_show,
+                                                        input_data_frame=True,
+                                                        experiment_name=experiment,
+                                                        metric_types=metric,
+                                                        array=self.array)
                                                                                                         
-                                experiment_timeseries_datetime_init = self.experiment_timeseries_dict[
-                                    experiment][metric].init_datetime
+                                    experiment_timeseries_datetime_init = self.experiment_timeseries_dict[
+                                        experiment][metric].init_datetime
                             
-                                self.experiment_timeseries_dict[experiment][metric].build()
+                                    self.experiment_timeseries_dict[experiment][metric].build()
                                 
-                            except KeyError: # remove metric from dict if no records returned                
-                                self.experiment_timeseries_dict[experiment].pop(metric, None)
-                                warnings.warn(f'missing {sensor} {variable} records for '
-                                              f'{experiment} experiment: {metric}')
+                                except KeyError: # remove metric from dict if no records returned                
+                                    self.experiment_timeseries_dict[experiment].pop(metric, None)
+                                    warnings.warn(f'missing {sensor} {variable} records for '
+                                                  f'{experiment} experiment: {metric}')
                 
-                    self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
-                    
-                    # subplot titles
-                    self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
-                    self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
-                    self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
-        
-                    # vertical axes labels
-                    self.axes[axes_row, 0].set_ylabel(f'Bias {data_frame_to_show.metric_long_name.values[0]}')
-                    self.axes[axes_row, 1].set_ylabel(f'RMS {data_frame_to_show.metric_long_name.values[0]}')
-                    self.axes[axes_row, 2].set_ylabel('Number of obs assimilated')
+                        self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')
+                        
+                        self.plot_data(axes_row, variable, sensor, metric_long_name=data_frame_to_show.metric_long_name.values[0])
+                        
+                        if self.array:
+                            """plotting specs for colormaps
+                            """
+                            for sub_row in range(iterator):    
+                                self.config_fig(ncols, axes_row+sub_row, sensor, data_frame_to_show)
+                        else:
+                            """plotting specs for the line plots (all pressure levels, inter-experiment comparison)
+                            """
+                            self.config_fig(ncols, axes_row, sensor, data_frame_to_show)
+                            # vertical axes labels
+                            self.axes[axes_row, 0].set_ylabel(f'Bias {data_frame_to_show.metric_long_name.values[0]}')
+                            self.axes[axes_row, 1].set_ylabel(f'RMS {data_frame_to_show.metric_long_name.values[0]}')
+                            self.axes[axes_row, 2].set_ylabel('Number of obs assimilated')
 
-                    if self.dark_theme:
-                        self.axes[axes_row, 0].axhline(color='#A2A4A3', lw=0.5)
-                    else:
-                        self.axes[axes_row, 0].axhline(color='black', lw=0.5)
-
-                    # Set ticks on both left and right vertical axes
-                    self.axes[axes_row, 0].tick_params(axis='y', which='both', left=True, right=True)
-                    self.axes[axes_row, 1].tick_params(axis='y', which='both', left=True, right=True)
-                    self.axes[axes_row, 2].tick_params(axis='y', which='both', left=True, right=True)
+                            if self.dark_theme:
+                                self.axes[axes_row, 0].axhline(color='#A2A4A3', lw=0.5)
+                            else:
+                                self.axes[axes_row, 0].axhline(color='black', lw=0.5)
+                    
+                        axes_row += (1 * iterator)
         
-                    self.axes[axes_row, 0].tick_params(axis='x', which='both', top=True, bottom=True,
-                                             labelbottom=True)
-                    self.axes[axes_row, 1].tick_params(axis='x', which='both', top=True, bottom=True,
-                                             labelbottom=True)
-                    self.axes[axes_row, 2].tick_params(axis='x', which='both', top=True, bottom=True,
-                                             labelbottom=True)
-                    
-                    self.plot_data(axes_row, variable, sensor)
-                    
-                    for col_idx in range(ncols):
-                        if self.dark_theme:
-                            self.axes[axes_row, col_idx].grid(True)
-                        self.axes[axes_row, col_idx].xaxis.set_major_locator(locator)
-                        self.axes[axes_row, col_idx].xaxis.set_major_formatter(formatter)
-                        self.axes[axes_row, col_idx].xaxis.set_minor_locator(month_locator)
-                    
-                    axes_row += 1   
-        
-                if self.gsi_it == 1:
-                    difference_str = "Ob - Bg"
-                elif self.gsi_it >= 2:
-                    difference_str = "Ob - Anal"
+                    if self.gsi_it == 1:
+                        difference_str = "Ob - Bg"
+                    elif self.gsi_it >= 2:
+                        difference_str = "Ob - Anal"
                 
-                title_str0 = f"GSI conventional data anal fit to assimilated obs ({difference_str}) [metrics downloaded: {self.db_name}"
+                    title_str0 = f"GSI conventional data anal fit to assimilated obs ({difference_str}) [metrics downloaded: {self.db_name}"
             
-            if experiment_timeseries_datetime_init:
-                init_ctime = experiment_timeseries_datetime_init.ctime()
-                title_str1 = f" {init_ctime}]"
-            else:
-                title_str1 = "]"
+                if experiment_timeseries_datetime_init:
+                    init_ctime = experiment_timeseries_datetime_init.ctime()
+                    title_str1 = f" {init_ctime}]"
+                else:
+                    title_str1 = "]"
             
-            self.fig.suptitle(f"{title_str0}{title_str1}")
-            plt.tight_layout()
-            plt.subplots_adjust(top = 1. - 1.2 / figsize_length)
-            if interactive_figure:
-                plt.show()
-            else:
-                if self.gsi_it ==1:
-                    fig_title=f'gdas_gsi_conv_asm_{variable}_omb.png'
-                elif self.gsi_it >=2:
-                    fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
-                plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
-            plt.close()
+                self.fig.suptitle(f"{title_str0}{title_str1}")
+                plt.tight_layout()
+                plt.subplots_adjust(top = 1. - 1.2 / figsize_length)
+                if interactive_figure:
+                    plt.show()
+                else:
+                    if self.gsi_it ==1:
+                        fig_title=f'gdas_gsi_conv_asm_{variable}_omb.png'
+                    elif self.gsi_it >=2:
+                        fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
+                    plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
+                plt.close()
     
-    def plot_data(self, axes_row, variable, sensor,
+    def config_fig(self, ncols, axes_row, sensor, data_frame_to_show):
+        # subplot titles
+        self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
+        self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
+        self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
+    
+
+        self.axes[axes_row, 0].tick_params(axis='x', which='both', top=True, bottom=True,
+                                 labelbottom=True)
+        self.axes[axes_row, 1].tick_params(axis='x', which='both', top=True, bottom=True,
+                                 labelbottom=True)
+        self.axes[axes_row, 2].tick_params(axis='x', which='both', top=True, bottom=True,
+                                 labelbottom=True)
+        for col_idx in range(ncols):
+            if self.dark_theme:
+                self.axes[axes_row, col_idx].grid(True)
+            
+            # Set ticks on both left and right vertical axes
+            self.axes[axes_row, col_idx].tick_params(axis='y', which='both', left=True, right=True)
+            
+            self.axes[axes_row, col_idx].xaxis.set_major_locator(self.locator)
+            self.axes[axes_row, col_idx].xaxis.set_major_formatter(self.formatter)
+            self.axes[axes_row, col_idx].xaxis.set_minor_locator(self.month_locator)
+    
+    def plot_data(self, axes_row, variable, sensor, metric_long_name=None,
                      alpha_foreground=0.9,
-                     alpha_background=0.5,):    
+                     alpha_background=0.5,):
         
-        #experiment_idx = 0
+        experiment_idx = 0
         for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
             for metric, timeseries_data in timeseries_dict.items():
                 if sensor in timeseries_data.timestamp_dict[metric].keys():
                     value_arr = timeseries_data.value_dict[metric][sensor]['asm']
                     timestamp_arr = timeseries_data.timestamp_dict[metric][sensor]['asm']
+                    if self.array:
+                        plevs_bot_arr = np.array([float(p) for p in timeseries_data.pressure_levs_dict[metric][sensor]['asm']['plev_bot']])
+                        plevs_top_arr = np.array([float(p) for p in timeseries_data.pressure_levs_dict[metric][sensor]['asm']['plev_top']])
+                        plevs_bnds = np.concatenate([plevs_bot_arr[:-1], plevs_top_arr[-2:]])[:-1].clip(min=50.)
+                
                 if metric.split('_')[0] == 'bias' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
                     """ mean error plot
                     """
-                    bias_timeseries = pd.Series(
-                        data=np.array(
-                            value_arr
-                        ),
-                        index=timestamp_arr
-                    ).astype(float)
+                    if self.array:
+                        bias_timeseries = pd.DataFrame(
+                            data=np.array(
+                                value_arr
+                            ),
+                            index=timestamp_arr,
+                        ).astype(float)
+                    
+                    else:
+                        bias_timeseries = pd.Series(
+                            data=np.array(
+                                value_arr
+                            ),
+                            index=timestamp_arr
+                        ).astype(float)
 
                     bias_timeseries = bias_timeseries.combine_first(
                         self.time_domain
@@ -405,44 +473,76 @@ class GSIConvFit2ObsFig(object):
                         center=True,
                     ).mean()
                         
-                    self.axes[axes_row, 0].plot(
-                        bias_timeseries.index,
-                        bias_timeseries.values,
-                        marker='none',
-                        color=self.config_dict['experiment_plot_dict']
-                            [experiment]['color'],
-                        alpha=alpha_background,
-                        lw=0.5,
-                        ls='-',
-                        zorder=2
-                    )
+                    if self.array:
+                        vmax = np.nanmax(np.abs(mean_values_smooth))
+                        pcmesh = self.axes[axes_row + experiment_idx, 0].pcolormesh(
+                            self.time_domain_bnds.index,
+                            plevs_bnds,
+                            mean_values_smooth.values[:,:-1].T,
+                            cmap=cc.cm.CET_D1A_r,
+                            vmax = vmax,
+                            vmin = -vmax,
+                            shading='flat',
+                            rasterized=True,
+                            )
+                        self.axes[axes_row + experiment_idx, 0].set_yscale('log')
+                        self.axes[axes_row + experiment_idx, 0].invert_yaxis()
+                        self.axes[axes_row + experiment_idx, 0].set_yticks(plevs_bnds[1:])
+                        self.axes[axes_row + experiment_idx, 0].get_yaxis().set_major_formatter(plt.ScalarFormatter())
+                        self.axes[axes_row + experiment_idx, 0].set_ylabel(f'{experiment}\npressure (hPa)')
                         
-                    self.axes[axes_row, 0].plot(
-                        mean_values_smooth.index,
-                        mean_values_smooth.values,
-                        marker='none',
-                        color=self.config_dict['experiment_plot_dict']
-                            [experiment]['color'],
-                        alpha=1.0,
-                        lw=4.*self.config_dict['experiment_plot_dict']
-                            [experiment]['lw'],
-                        ls=self.config_dict['experiment_plot_dict']
-                            [experiment]['ls'],
-                        label=self.friendly_names_dict[experiment],
-                        zorder=3
-                    )
+                        fig = self.axes[axes_row + experiment_idx, 0].get_figure()
+                        cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row + experiment_idx, 0])
+                        cbar.set_label(f'mean {metric_long_name}')
+                    
+                    else:
+                    
+                        self.axes[axes_row, 0].plot(
+                            bias_timeseries.index,
+                            bias_timeseries.values,
+                            marker='none',
+                            color=self.config_dict['experiment_plot_dict']
+                                [experiment]['color'],
+                            alpha=alpha_background,
+                            lw=0.5,
+                            ls='-',
+                            zorder=2
+                        )
+                        
+                        self.axes[axes_row, 0].plot(
+                            mean_values_smooth.index,
+                            mean_values_smooth.values,
+                            marker='none',
+                            color=self.config_dict['experiment_plot_dict']
+                                [experiment]['color'],
+                            alpha=1.0,
+                            lw=4.*self.config_dict['experiment_plot_dict']
+                                [experiment]['lw'],
+                            ls=self.config_dict['experiment_plot_dict']
+                                [experiment]['ls'],
+                            label=self.friendly_names_dict[experiment],
+                            zorder=3
+                        )
 
-                    self.axes[axes_row,0].legend(loc='upper right')
+                        self.axes[axes_row, 0].legend(loc='upper right')
                 
                 elif metric.split('_')[0] == 'rms' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
                     """RMS error plot
                     """
-                    rmse_timeseries = pd.Series(
-                        data=np.array(
-                            value_arr
-                        ),
-                        index=timestamp_arr
-                    ).astype(float)
+                    if self.array:
+                        rmse_timeseries = pd.DataFrame(
+                            data=np.array(
+                                value_arr
+                            ),
+                            index=timestamp_arr
+                        ).astype(float)
+                    else:
+                        rmse_timeseries = pd.Series(
+                            data=np.array(
+                                value_arr
+                            ),
+                            index=timestamp_arr
+                        ).astype(float)
                             
                     rmse_timeseries = rmse_timeseries.combine_first(
                             self.time_domain
@@ -454,40 +554,69 @@ class GSIConvFit2ObsFig(object):
                         center=True,
                     ).mean()
                     
-                    self.axes[axes_row, 1].plot(
-                        rmse_timeseries.index,
-                        rmse_timeseries.values,
-                        marker='none',
-                        color=self.config_dict['experiment_plot_dict']
-                            [experiment]['color'],
-                        alpha=alpha_background,
-                        lw=0.5,
-                        ls='-',
-                        zorder=2
-                    )
+                    if self.array:
+                        vmax = np.nanmax(np.abs(rmse_values_smooth))
+                        pcmesh = self.axes[axes_row + experiment_idx, 1].pcolormesh(
+                            self.time_domain_bnds.index,
+                            plevs_bnds,
+                            rmse_values_smooth.values[:,:-1].T,
+                            cmap=cc.cm.CET_CBTL4_r,
+                            vmax = vmax,
+                            vmin = 0,
+                            shading='flat',
+                            rasterized=True,
+                            )
+                        self.axes[axes_row + experiment_idx, 1].set_yscale('log')
+                        self.axes[axes_row + experiment_idx, 1].invert_yaxis()
+                        self.axes[axes_row + experiment_idx, 1].set_yticks(plevs_bnds[1:])
+                        self.axes[axes_row + experiment_idx, 1].get_yaxis().set_major_formatter(plt.ScalarFormatter())
                         
-                    self.axes[axes_row, 1].plot(
-                        rmse_values_smooth.index,
-                        rmse_values_smooth.values,
-                        marker='none',
-                        color=self.config_dict['experiment_plot_dict']
-                            [experiment]['color'],
-                        alpha=1.0,
-                        lw=4.*self.config_dict['experiment_plot_dict']
-                            [experiment]['lw'],
-                        ls=self.config_dict['experiment_plot_dict']
-                            [experiment]['ls'],
-                        label=self.friendly_names_dict[experiment],
-                        zorder=3
-                    )
+                        fig = self.axes[axes_row + experiment_idx, 1].get_figure()
+                        cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row + experiment_idx, 1])
+                        cbar.set_label(f'RMS {metric_long_name}')
+                    else:
+                        self.axes[axes_row, 1].plot(
+                            rmse_timeseries.index,
+                            rmse_timeseries.values,
+                            marker='none',
+                            color=self.config_dict['experiment_plot_dict']
+                                [experiment]['color'],
+                            alpha=alpha_background,
+                            lw=0.5,
+                            ls='-',
+                            zorder=2
+                        )
+                        
+                        self.axes[axes_row, 1].plot(
+                            rmse_values_smooth.index,
+                            rmse_values_smooth.values,
+                            marker='none',
+                            color=self.config_dict['experiment_plot_dict']
+                                [experiment]['color'],
+                            alpha=1.0,
+                            lw=4.*self.config_dict['experiment_plot_dict']
+                                [experiment]['lw'],
+                            ls=self.config_dict['experiment_plot_dict']
+                                [experiment]['ls'],
+                            label=self.friendly_names_dict[experiment],
+                            zorder=3
+                        )
                                         
                 elif metric.split('_')[0] == 'count' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
-                    nobs_used_timeseries = pd.Series(
-                        data=np.array(
-                            value_arr
-                        ),
-                        index=timestamp_arr
-                    ).astype(float)
+                    if self.array:
+                        nobs_used_timeseries = pd.DataFrame(
+                            data=np.array(
+                                value_arr
+                            ),
+                            index=timestamp_arr
+                        ).astype(float)
+                    else:
+                        nobs_used_timeseries = pd.Series(
+                            data=np.array(
+                                value_arr
+                            ),
+                            index=timestamp_arr
+                        ).astype(float)
 
                     nobs_used_timeseries = nobs_used_timeseries.combine_first(
                         self.time_domain
@@ -499,32 +628,54 @@ class GSIConvFit2ObsFig(object):
                         center=True,
                     ).mean()
                         
-                    self.axes[axes_row, 2].plot(
-                        nobs_used_timeseries.index,
-                        nobs_used_timeseries.values,
-                        marker='none',
-                        color=self.config_dict['experiment_plot_dict']
-                            [experiment]['color'],
-                        alpha=alpha_background,
-                        lw=0.5,
-                        ls='-',
-                        zorder=2
-                    )
+                    if self.array:
+                        vmax = np.nanmax(np.abs(nobs_used_smooth))
+                        pcmesh = self.axes[axes_row + experiment_idx, 2].pcolormesh(
+                            self.time_domain_bnds.index,
+                            plevs_bnds,
+                            nobs_used_smooth.values[:,:-1].T,
+                            cmap=cc.cm.CET_L1_r,
+                            vmax = vmax,
+                            vmin = 0,
+                            shading='flat',
+                            rasterized=True,
+                            )
+                        self.axes[axes_row + experiment_idx, 2].set_yscale('log')
+                        self.axes[axes_row + experiment_idx, 2].invert_yaxis()
+                        self.axes[axes_row + experiment_idx, 2].set_yticks(plevs_bnds[1:])
+                        self.axes[axes_row + experiment_idx, 2].get_yaxis().set_major_formatter(plt.ScalarFormatter())
                         
-                    self.axes[axes_row, 2].plot(
-                        nobs_used_smooth.index,
-                        nobs_used_smooth.values,
-                        marker='none',
-                        color=self.config_dict['experiment_plot_dict']
-                            [experiment]['color'],
-                        alpha=1.0,
-                        lw=4.*self.config_dict['experiment_plot_dict']
-                            [experiment]['lw'],
-                        ls=self.config_dict['experiment_plot_dict']
-                            [experiment]['ls'],
-                        label=f"{self.friendly_names_dict[experiment]}",
-                        zorder=3
-                    )       
+                        fig = self.axes[axes_row + experiment_idx, 2].get_figure()
+                        cbar = fig.colorbar(pcmesh, ax=self.axes[axes_row + experiment_idx, 2])
+                        cbar.set_label(f'Number of obs assimilated')
+                    else:
+                        self.axes[axes_row, 2].plot(
+                            nobs_used_timeseries.index,
+                            nobs_used_timeseries.values,
+                            marker='none',
+                            color=self.config_dict['experiment_plot_dict']
+                                [experiment]['color'],
+                            alpha=alpha_background,
+                            lw=0.5,
+                            ls='-',
+                            zorder=2
+                        )
+                        
+                        self.axes[axes_row, 2].plot(
+                            nobs_used_smooth.index,
+                            nobs_used_smooth.values,
+                            marker='none',
+                            color=self.config_dict['experiment_plot_dict']
+                                [experiment]['color'],
+                            alpha=1.0,
+                            lw=4.*self.config_dict['experiment_plot_dict']
+                                [experiment]['lw'],
+                            ls=self.config_dict['experiment_plot_dict']
+                                [experiment]['ls'],
+                            label=f"{self.friendly_names_dict[experiment]}",
+                            zorder=3)
+            
+            experiment_idx += 1
 
 def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=None, stop_date=None):
     args = parse_arguments()
@@ -563,6 +714,11 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
         for var in global_config_dict['variable_list']:
             variable_list.append(var)
             
+    if args.pressure_bins:
+        metric_name_key = 'metric_name'
+    else:
+        metric_name_key = 'name'
+            
     # Rank 0 prepares the data
     if rank == 0:
         global_data_frame = get_data_frame(
@@ -571,14 +727,15 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
             variable_list,
             start_date=start_date,
             stop_date=stop_date,
-            gsi_it=gsi_stage)
+            gsi_it=gsi_stage,
+            pressure_bins=args.pressure_bins)
 
         # Split the data by variable (one part per variable)
         data_frame_parts_dict = dict()
         
         for var in variable_list:
             data_frame_parts_dict[var] = global_data_frame[
-                global_data_frame['name'].str.contains(var)]
+                global_data_frame[metric_name_key].str.contains(var)]
 
     else:
         data_frame_parts_dict = None
@@ -618,7 +775,8 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
             experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
                 data_frame=data_frame,
                 input_data_frame=True,
-                gsi_it=gsi_stage
+                gsi_it=gsi_stage,
+                pressure_bins=args.pressure_bins
             )
             experiment_metrics_timeseries_data.variable_list = [var]
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
