@@ -50,7 +50,7 @@ def config():
         
         'experiment_plot_dict': {
             'cfsr' :
-               {'color' : '#A2A4A3',
+               {'color' : '#0A3758',#'#A2A4A3',
                 'ls': '-',
                 'lw': 0.5
             },
@@ -58,7 +58,7 @@ def config():
             'NASA_GEOSIT_GSISTATS' :
                 {'color' : '#E4002B',
                  'ls': '-',
-                 'lw': 1.
+                 'lw': 0.5
             },
             'GDAS' : {
                 'color' : '#0A3758',
