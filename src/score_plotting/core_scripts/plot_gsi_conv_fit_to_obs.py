@@ -30,8 +30,8 @@ def config():
     if args.dark_theme:
         mpl_style_sheet = 'dark_theme.mplstyle'
     else:
-        mpl_style_sheet = 'full_3x3pg.mplstyle'
-        #mpl_style_sheet = 'agu_full.mplstyle'
+        #mpl_style_sheet = 'full_3x3pg.mplstyle'
+        mpl_style_sheet = 'agu_full.mplstyle'
         
     config_dict = {
         'config_path':
@@ -52,6 +52,8 @@ def config():
         'experiment_plot_dict': {
                         'NASA_GEOSIT_GSISTATS' :
                 {'color' : '#E4002B',
+                 'color2': '#A2A4A3',
+                 'marker': 's',
                  'ls': '-',
                  'lw': 0.75
             },

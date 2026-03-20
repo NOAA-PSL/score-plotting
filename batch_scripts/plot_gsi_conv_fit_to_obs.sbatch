@@ -15,4 +15,5 @@ micromamba activate darr_score_sqlalchemy1_dev_env
 #which mpirun
 # Run the MPI Python script using mpiexec
 timeout 21600 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries
- 
+timeout 21600 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_rod /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries --pressure_bins --sensor 120
+timeout 21600 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_rod /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries --pressure_bins --sensor 220

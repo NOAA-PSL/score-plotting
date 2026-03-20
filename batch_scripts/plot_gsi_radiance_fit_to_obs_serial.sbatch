@@ -27,4 +27,10 @@ timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit
 timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor amsre /media/darr/results/figures/brightness_temperature_error_timeseries
 timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor amsr2 /media/darr/results/figures/brightness_temperature_error_timeseries
 timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor tmi /media/darr/results/figures/brightness_temperature_error_timeseries
-
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor abi /media/darr/results/figures/brightness_temperature_error_timeseries
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor ahi /media/darr/results/figures/brightness_temperature_error_timeseries
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor iasi /media/darr/results/figures/brightness_temperature_error_timeseries
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor seviri /media/darr/results/figures/brightness_temperature_error_timeseries
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor imgr /media/darr/results/figures/brightness_temperature_error_timeseries
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor cris /media/darr/results/figures/brightness_temperature_error_timeseries
+timeout 3600 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor cris-fsr /media/darr/results/figures/brightness_temperature_error_timeseries

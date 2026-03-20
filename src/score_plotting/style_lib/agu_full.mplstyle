@@ -2,9 +2,9 @@
 
 ### FONT
 font.size : 8
-font.family : serif
-font.serif : Times
-font.sans-serif : Helvetica, Arial
+font.family: serif
+font.sans-serif: Helvetica Neue, FreeSans, Roboto, Arial
+font.serif: Noto Serif CJK JP
 
 ### TEXT
 #text.usetex : True
