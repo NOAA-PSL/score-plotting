@@ -43,10 +43,12 @@ def config():
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
         'experiment_list': [
-            #'GDAS',
-            'replay_observer_diagnostic_v1.1',
             'cfsr',
-            'NASA_GEOSIT_GSISTATS',
+            'GDAS',
+            'NASA_GEOSIT_GSISTATS'
+            'replay_observer_diagnostic_v1.1',
+
+            ,
             #'scout_run_v1',
             #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
             '3dvar_coupledreanl_scoutrun_v2'
@@ -59,7 +61,7 @@ def config():
                  'marker': 'x',
                  'ls': '-',
                  'ls2': ':',
-                 'lw': 0.75,
+                 'lw': 1.0,
                  'zorder':1
             },
             'cfsr' :
@@ -68,7 +70,7 @@ def config():
                 'marker': 'x',
                 'ls': '-',
                 'ls2': ':',
-                'lw': 0.5,
+                'lw': 1.5,
                 'zorder':1,
             },
             
@@ -82,7 +84,7 @@ def config():
                 'color2': '#EEF5F8',
                 'marker': '+',
                 'ls': '-',
-                'lw': 1.0,
+                'lw': 0.75,
                 'ls2': '-.',
                 'zorder':2
             },
@@ -106,7 +108,7 @@ def config():
                 'color2': '#F3F0E9',
                 'marker': '+',
                 'ls': '-',
-                'lw': 1.0,
+                'lw': 0.5,
                 'ls2': '--',
                 'zorder':2
             }

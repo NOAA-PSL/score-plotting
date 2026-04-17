@@ -31,7 +31,8 @@ def config():
     if args.dark_theme:
         mpl_style_sheet = 'dark_theme.mplstyle'
     else:
-        mpl_style_sheet = 'full_3x3pg.mplstyle'
+        #mpl_style_sheet = 'full_3x3pg.mplstyle'
+        mpl_style_sheet = 'ams_full.mplstyle'
         
     config_dict = {
         'config_path':
@@ -39,20 +40,20 @@ def config():
                          'style_lib'),
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
-        'experiment_list': ['GDAS',
-                            'cfsr',
+        'experiment_list': ['cfsr',
+                            'GDAS',
                             'NASA_GEOSIT_GSISTATS',
                             'replay_observer_diagnostic_v1.1',
-                            'scout_run_v1',
-                            '3dvar_coupledreanl_scoutrun_1979streamv1_test1',
-                            '3dvar_coupledreanl_scoutrun_v1_test1'
+                            #'scout_run_v1',
+                            #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+                            '3dvar_coupledreanl_scoutrun_v2'
                          ],
         
         'experiment_plot_dict': {
             'cfsr' :
-               {'color' : '#A2A4A3',
+               {'color' : '#565A5C',
                 'ls': '-',
-                'lw': 0.5
+                'lw': 1.5
             },
             
             'NASA_GEOSIT_GSISTATS' :
@@ -61,14 +62,14 @@ def config():
                  'lw': 1.
             },
             'GDAS' : {
-                'color' : '#0A3758',
+                'color' : '#0085CA',
                 'ls': '-',
-                'lw': 0.5
+                'lw': 1.25
             },
             'replay_observer_diagnostic_v1.1' : {
-                'color' : '#8D7334',
+                'color' : '#0A3758',
                 'ls': '-',
-                'lw': 0.5
+                'lw': 0.75
             },
             'scout_run_v1' : {
                 'color' : '#0A3758',
@@ -85,15 +86,15 @@ def config():
                 'ls': '-',
                 'lw': 1.0
             },
-            '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#0A3758',
+            '3dvar_coupledreanl_scoutrun_v1' : {
+                'color' : '#8D7334',
                 'ls': '-',
-                'lw': 1.25 
+                'lw': 0.5
             }
         },
         'sensor_list': get_instrument_channels().keys(),
-        'start_date': '1978-10-01 00:00:00',
-        'stop_date': '2026-09-30 23:59:59',
+        'start_date': '2022-10-01 00:00:00',
+        'stop_date': '2023-09-30 23:59:59',
     }
     
     '''
@@ -107,7 +108,7 @@ def config():
                          "replay_observer_diagnostic_v1.1": "UFS-replay",
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
                          "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
-                         '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
+                         '3dvar_coupledreanl_scoutrun_v2': "weakly coupled scout (3DVar)",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
@@ -347,7 +348,7 @@ class GSIRadianceFit2ObsFig(object):
             channel_idx = np.argmin(np.abs(np.array(self.channel_dict[sensor]) - channel_num))
             if len(sat_set) > 0:
                 max_yerr=0.5 # temperature (K)
-                figsize_width = 2 * 3.74 * ncols
+                figsize_width = 4.5 * ncols
                 figsize_length = 4.53 * len(sat_set)
                 fig, axes = plt.subplots(len(sat_set), ncols, sharex=True,sharey=False,
                                          squeeze=False,
