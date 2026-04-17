@@ -1,0 +1,28 @@
+#### matplotlib style file for AMS figures
+
+### FONT
+font.size : 8
+font.family: serif
+font.sans-serif: Helvetica Neue, FreeSans, Roboto, Arial
+font.serif: Noto Serif CJK JP
+
+### TEXT
+#text.usetex : True
+
+### AXES
+axes.titlesize : 8
+axes.labelsize : 8
+
+### TICKS
+xtick.labelsize : 8
+ytick.labelsize : 8
+
+### Legend
+legend.fontsize : 8
+
+### FIGURE
+figure.titlesize : 8
+figure.figsize : 6.5, 9.06
+
+### SAVING FIGURES
+savefig.format : pdf

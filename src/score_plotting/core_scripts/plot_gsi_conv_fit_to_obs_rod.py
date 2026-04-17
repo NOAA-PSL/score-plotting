@@ -15,16 +15,17 @@ def main():
             'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
         experiment_list=[
-            'NASA_GEOSIT_GSISTATS',
-            'cfsr',
+            '3dvar_coupledreanl_scoutrun_v2',
+            'replay_observer_diagnostic_v1.1',
+            #'NASA_GEOSIT_GSISTATS',
+            #'cfsr',
             #'GDAS',
             #'replay_observer_diagnostic_v1',
             #'replay_observer_diagnostic_overlap',
             #'scout_run_v1',
             #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
-            #'3dvar_coupledreanl_scoutrun_v1_test1'
         ],
-        start_date='1978-10-01 00:00:00',
+        start_date='1996-10-01 00:00:00',
         stop_date='2026-09-30 23:59:59'
     )
 

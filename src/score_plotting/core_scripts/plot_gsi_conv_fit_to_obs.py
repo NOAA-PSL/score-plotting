@@ -10,6 +10,8 @@ import argparse
 from datetime import datetime
 
 import numpy as np
+from scipy.signal import detrend
+from scipy import stats as scipy_stats
 from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
@@ -20,6 +22,7 @@ from mpi4py import MPI
 from score_plotting.core_scripts import gsistats_conv_timeseries
 
 HOURS_PER_DAY = 24. # hours
+P_TEST_LEVEL = 0.01
 
 def config():
     """Add experiment name entries to experiment_list and
@@ -31,7 +34,7 @@ def config():
         mpl_style_sheet = 'dark_theme.mplstyle'
     else:
         #mpl_style_sheet = 'full_3x3pg.mplstyle'
-        mpl_style_sheet = 'agu_full.mplstyle'
+        mpl_style_sheet = 'ams_full.mplstyle'
         
     config_dict = {
         'config_path':
@@ -46,23 +49,27 @@ def config():
             'NASA_GEOSIT_GSISTATS',
             #'scout_run_v1',
             #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
-            #'3dvar_coupledreanl_scoutrun_v1_test1'
+            '3dvar_coupledreanl_scoutrun_v2'
                          ],
         
         'experiment_plot_dict': {
                         'NASA_GEOSIT_GSISTATS' :
                 {'color' : '#E4002B',
                  'color2': '#A2A4A3',
-                 'marker': 's',
+                 'marker': 'x',
                  'ls': '-',
-                 'lw': 0.75
+                 'ls2': ':',
+                 'lw': 0.75,
+                 'zorder':1
             },
             'cfsr' :
-               {'color' : '#0A3758',
-                'color2': '#EEF5F8',
-                'marker': 'o',
+               {'color' : '#565A5C',
+                'color2': '#A2A4A3',
+                'marker': 'x',
                 'ls': '-',
-                'lw': 0.5
+                'ls2': ':',
+                'lw': 0.5,
+                'zorder':1,
             },
             
             'GDAS' : {
@@ -71,11 +78,13 @@ def config():
                 'lw': 1.25
             },
             'replay_observer_diagnostic_v1.1' : {
-                'color' : '#8D7334',
-                'color2': '#F3F0E9',
-                'marker': 's',
+                'color' : '#0A3758',
+                'color2': '#EEF5F8',
+                'marker': '+',
                 'ls': '-',
                 'lw': 1.0,
+                'ls2': '-.',
+                'zorder':2
             },
             'scout_run_v1' : {
                 'color' : '#565A5C',
@@ -92,10 +101,14 @@ def config():
                 'ls': '-',
                 'lw': 1.5
             },
-            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+            '3dvar_coupledreanl_scoutrun_v2' : {
                 'color' : '#8D7334',
+                'color2': '#F3F0E9',
+                'marker': '+',
                 'ls': '-',
-                'lw': 0.75 
+                'lw': 1.0,
+                'ls2': '--',
+                'zorder':2
             }
         },
         'sensor_list': [111, 112, 120, 122, 126, 130, 131, 132, 133, 134, 135,
@@ -114,7 +127,7 @@ def config():
             #'fit_t_data', # fit of temperature data (K)
             #'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
-        'start_date': '1978-10-01 00:00:00',
+        'start_date': '1996-10-01 00:00:00',
         'stop_date': '2026-09-30 23:59:59',
     }
     
@@ -129,7 +142,7 @@ def config():
             "replay_observer_diagnostic_v1.1": "Replay",
             "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
             "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
-            '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
+            '3dvar_coupledreanl_scoutrun_v2': "weakly coupled scout (3DVar)",
             'cfsr':"CFSR"
                          }
                          
@@ -201,6 +214,44 @@ def get_data_frame(experiment_list, sensor_list, variable_list,
                                                 start_date=start_date,
                                                 stop_date=stop_date,
                                                 array=pressure_bins)
+
+def lag1_autocorrelation(timeseries):
+    """
+    """
+    detrended_timeseries = detrend(timeseries)
+    
+    timeseries_deviation_minus = detrended_timeseries[:-1] - np.mean(detrended_timeseries[:-1], axis=0)
+    timeseries_deviation_plus = detrended_timeseries[1:] - np.mean(detrended_timeseries[1:], axis=0)
+    
+    return (np.sum((timeseries_deviation_minus) * (timeseries_deviation_plus), axis=0)
+        ) / (np.sqrt(np.sum(timeseries_deviation_minus**2, axis=0)) * np.sqrt(np.sum(timeseries_deviation_plus**2, axis=0)))
+        
+def variance_time_avg(stdev, n, row1=0.):
+    """
+    """
+    variance_inflation_factor = (1. + row1) / (1. - row1)
+    variance = (stdev**2 / n) * variance_inflation_factor
+    
+    n_eff = n * variance_inflation_factor**-1
+    
+    return(variance, n_eff)
+    
+def get_tstat(difference_timeseries, null=0.):
+    
+    try:
+        variance, n_eff = variance_time_avg(
+                              difference_timeseries.std(axis=0, ddof=1),
+                              difference_timeseries.count(axis=0),
+                              row1=lag1_autocorrelation(difference_timeseries))
+    
+        tstat = (difference_timeseries.mean(axis=0) - null) / np.sqrt(variance)
+        p_value = 2. * scipy_stats.t.sf(abs(tstat), df=n_eff - 1.0)
+    except ValueError:
+        warnings.warn(f'lag1_autocorrelation({difference_timeseries}) cannot be computed, possibly due to the existance of infs or NaNs')
+        tstat=None
+        p_value=None
+    
+    return(tstat, p_value)
 
 class GSIConvFit2ObsFig(object):
     """
@@ -309,7 +360,7 @@ class GSIConvFit2ObsFig(object):
             
         output_dir = self.config_dict['output_path']
         
-        self.locator = mdates.AutoDateLocator(minticks=8, maxticks=12)
+        self.locator = mdates.AutoDateLocator(minticks=6, maxticks=12)
         self.formatter = mdates.ConciseDateFormatter(self.locator)
         self.month_locator = mdates.MonthLocator(interval=3)
         
@@ -329,12 +380,12 @@ class GSIConvFit2ObsFig(object):
                    nmetrics=ncols
                    ncols = 1
                    figsize_length = 9.06 * (nrows/9.)
-                   figsize_width = 7.48
+                   figsize_width = 6.5#7.48
                 else:
                     nrows = len(sensors_to_show)
                     iterator = 1
                     figsize_length = 4.53 * nrows
-                    figsize_width = 2 * 3.74 * ncols
+                    figsize_width = 4.5 * ncols
                     # instantiate figure here for single level data (line plots)    
                     self.fig, self.axes = plt.subplots(nrows, ncols, sharex=True,sharey=False,
                                             squeeze=False,
@@ -377,6 +428,9 @@ class GSIConvFit2ObsFig(object):
                         self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')
                         
                         if self.array:
+                            self.seasonal_bias_xmax = 0
+                            self.seasonal_rms_xmax = 0
+                            self.seasonal_nobs_xmax = 0
                             # instantiate figure here for multi-level data (pcolormesh)
                             self.fig, self.axes = plt.subplots(nrows, ncols, sharex=True,sharey=True,
                                                     squeeze=False,
@@ -416,16 +470,21 @@ class GSIConvFit2ObsFig(object):
         elif self.gsi_it >= 2:
             difference_str = "Ob - Anal"
     
-        title_str0 = f"GSI conventional data anal fit to assimilated obs ({difference_str}) [metrics downloaded: {self.db_name}"
+        if self.array:
+            title_str0 = f"GSI conventional data anal fit to assimilated obs ({difference_str})\nmetrics downloaded: {self.db_name}"
+        else:
+            title_str0 = f"GSI conventional data anal fit to assimilated obs ({difference_str}) metrics downloaded: {self.db_name}"
         
         if experiment_timeseries_datetime_init:
             init_ctime = experiment_timeseries_datetime_init.ctime()
-            title_str1 = f" {init_ctime}]"
+            title_str1 = f" {init_ctime}"
         else:
-            title_str1 = "]"
+            title_str1 = ""
 
         if self.array:
-            title_str1+=f"\n{self.time_domain.index[0].strftime('%m-%d-%Y')} - {self.time_domain.index[-1].strftime('%m-%d-%Y')} {data_frame_to_show.metric_long_name.values[0]}: {sensor}, {data_frame_to_show.metric_obs_platform.values[0]}"
+            title_str1+=f"\n[{self.time_domain.index[0].strftime('%m-%d-%Y')} : {self.time_domain.index[-1].strftime('%m-%d-%Y')}] {data_frame_to_show.metric_long_name.values[0]}: {sensor}, {data_frame_to_show.metric_obs_platform.values[0]}"
+            if do_seasons:
+                title_str1+=f"\nStippling indicates $p$ < {P_TEST_LEVEL:.1g} (paired $t$-test; linear detrending; lag-1 autocorrelation adjustment)"
             
         self.fig.suptitle(f"{title_str0}{title_str1}")
         plt.tight_layout()
@@ -439,7 +498,7 @@ class GSIConvFit2ObsFig(object):
                 fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
             if do_seasons:
                 fig_title = 'seasonal_' + fig_title
-            plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
+            plt.savefig(os.path.join(output_dir, fig_title), dpi=600)
         plt.close()                    
     
     def config_fig(self, ncols, axes_row, sensor, data_frame_to_show, iterator=None, nmetrics=3):
@@ -474,15 +533,21 @@ class GSIConvFit2ObsFig(object):
                 
                 self.axes[axes_row + i, 0].set_yscale('log')
                 self.axes[axes_row +i, 0].invert_yaxis()
-                self.axes[axes_row +i, 0].set_yticks([50, 100, 200, 400, 600, 1000])
+                if data_frame_to_show.metric_unit.values[0] == 'percent of qsaturation guess':
+                    self.axes[axes_row +i, 0].set_ylim(1100, 350)
+                    self.axes[axes_row +i, 0].set_yticks([400, 600, 1000])
+                else:
+                    self.axes[axes_row +i, 0].set_ylim(1100, 75)
+                    self.axes[axes_row +i, 0].set_yticks([100, 200, 400, 600, 1000])
+                    
                 #self.axes[axes_row +i, 0].set_yticks(np.arange(50, 1100, 50), minor=True)
                 self.axes[axes_row+i, 0].get_yaxis().set_major_formatter(plt.ScalarFormatter())
                 self.axes[axes_row + i, 0].set_ylabel('atm p (hPa)')
                 
         else:
-            self.axes[axes_row, 0].set_title(f'Bias: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
-            self.axes[axes_row, 1].set_title(f'RMS: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
-            self.axes[axes_row, 2].set_title(f'Nobs assimilated: {sensor} ({data_frame_to_show.metric_obs_platform.values[0]})')
+            self.axes[axes_row, 0].set_title(f'{sensor}, {data_frame_to_show.metric_obs_platform.values[0]}')
+            self.axes[axes_row, 1].set_title(f'{sensor}, {data_frame_to_show.metric_obs_platform.values[0]}')
+            self.axes[axes_row, 2].set_title(f'{sensor}, {data_frame_to_show.metric_obs_platform.values[0]}')
     
 
             self.axes[axes_row, 0].tick_params(axis='x', which='both', top=True, bottom=True,
@@ -512,7 +577,9 @@ class GSIConvFit2ObsFig(object):
             else:
                 self.axes[axes_row, 0].axhline(color='black', lw=0.5)
     
-    def plot_seasons(self, timeseries_df, plevs_bnds, axes_col, experiment):
+    def plot_seasons(self, timeseries_df, plevs_bnds, axes_col, experiment, metric_unit=None,
+                     seasonal_mean_diffs=None, xmin=None, xmax=None):
+        
         dplevs = np.diff(plevs_bnds)
         plevs = plevs_bnds[:-1] + dplevs/2.
         
@@ -537,31 +604,91 @@ class GSIConvFit2ObsFig(object):
             'DJF' : 2,
             'SON' : 3,
         }
+        
+        if seasonal_mean_diffs is not None:
+            seasonal_mean_diffs_dict = {
+                'DJF' : seasonal_mean_diffs[seasonal_mean_diffs.index.month == 12],
+                'MAM' : seasonal_mean_diffs[seasonal_mean_diffs.index.month == 3],
+                'JJA' : seasonal_mean_diffs[seasonal_mean_diffs.index.month == 6],
+                'SON' : seasonal_mean_diffs[seasonal_mean_diffs.index.month == 9],
+            }
+        
         for season, data in season_dict.items():
-            mean = data.mean()
-            std = data.std()
+            mean = data.mean(axis=0)
+            std = data.std(axis=0, ddof=1)
+            if seasonal_mean_diffs is not None:
+                tstat, p_value = get_tstat(seasonal_mean_diffs_dict[season])
+                
+                if p_value is None:
+                    # markup figure if bad values
+                    plevs_bnds_sig = plevs_bnds[:-1]
+                    dplevs_sig = dplevs
+                    sig_edgecolor = '#096FAE'
+                    sig_hatch = 'x*'
+                    
+                else:
+                    # markup figure with stippling for significant differences
+                    sig = p_value < P_TEST_LEVEL
+                    
+                    plevs_bnds_sig = plevs_bnds[:-1][sig[:-1]]
+                    dplevs_sig = dplevs[sig[:-1]]
+                    sig_edgecolor = '#000000'
+                    sig_hatch = '...'
+                                
+                self.axes[season_row_map[season], axes_col].barh(
+                    plevs_bnds_sig,
+                    align='edge',
+                    width=xmax - xmin,
+                    height=dplevs_sig,
+                    left=xmin,
+                    edgecolor=sig_edgecolor,
+                    facecolor='none',
+                    lw=0.,
+                    hatch=sig_hatch,
+                    zorder=5,
+                )
+                            
+            self.axes[season_row_map[season], axes_col].fill_betweenx(
+                plevs,#plevs_bnds[1:],
+                mean[:-1] + 2.*std[:-1],
+                x2=mean[:-1] - 2.*std[:-1],
+                color=self.config_dict['experiment_plot_dict']
+                    [experiment]['color'],
+                #step='pre',
+                alpha=0.25,
+                zorder=2 + self.config_dict['experiment_plot_dict']
+                    [experiment]['zorder'],
+                lw=0,
+                edgecolor='none',
+            )
             
             self.axes[season_row_map[season], axes_col].errorbar(
                 mean[:-1],
                 plevs,
-                xerr=std[:-1],
+                #edges=plevs_bnds,
+                #xerr=std[:-1],
                 yerr=-dplevs/2.,
-                fmt=':',
-                marker=self.config_dict['experiment_plot_dict']
-                    [experiment]['marker'],
+                #orientation='horizontal',
+                #baseline=None,
+                #ls=self.config_dict['experiment_plot_dict']
+                #    [experiment]['ls2'],
+                fmt=self.config_dict['experiment_plot_dict']
+                    [experiment]['ls2'],
+                #marker=self.config_dict['experiment_plot_dict'][experiment]['marker'],
                 color=self.config_dict['experiment_plot_dict']
                     [experiment]['color'],
-                mec=self.config_dict['experiment_plot_dict']
-                    [experiment]['color2'],
-                ecolor=self.config_dict['experiment_plot_dict']
-                    [experiment]['color2'],
-                lw=0.5,
-                elinewidth=1.5,
-                alpha=1.0,
+                #mec=self.config_dict['experiment_plot_dict']
+                #    [experiment]['color2'],
+                #ecolor=self.config_dict['experiment_plot_dict']
+                #    [experiment]['color2'],
+                lw=1.,
+                elinewidth=3.,
+                alpha=1,
                 label=self.friendly_names_dict[experiment],
-                zorder=2
+                zorder=6 + self.config_dict['experiment_plot_dict']
+                    [experiment]['zorder']
             )
-            
+                        
             if axes_col == 0:
                 self.axes[season_row_map[season], 0].set_ylabel(f'{season}\natm p (hPa)')
                 self.axes[season_row_map[season], -1].tick_params(
@@ -582,16 +709,21 @@ class GSIConvFit2ObsFig(object):
                 np.broadcast_to(plevs + dplevs/2., season_6hr_dict[season].values[:,:-1].shape),
                 np.broadcast_to(plevs - dplevs/2., season_6hr_dict[season].values[:,:-1].shape),
                 colors=self.config_dict['experiment_plot_dict']
-                        [experiment]['color'],
-                alpha=0.01,
-                zorder=1
+                        [experiment]['color2'],
+                alpha=0.5,
+                zorder=self.config_dict['experiment_plot_dict']
+                    [experiment]['zorder']
             )
             
             #self.axes[season_row_map[season], axes_col].set_facecolor('#A2A4A3')
             self.axes[season_row_map[season], axes_col].set_yscale('log')
-            self.axes[season_row_map[season], axes_col].set_yticks([50, 70, 100, 200, 400, 600, 1000])
             self.axes[season_row_map[season], axes_col].invert_yaxis()
-            self.axes[season_row_map[season], axes_col].set_ylim(1050,50)
+            if metric_unit=='%':
+                self.axes[season_row_map[season], axes_col].set_ylim(1100,350)
+                self.axes[season_row_map[season], axes_col].set_yticks([400, 600, 1000])
+            else:
+                self.axes[season_row_map[season], axes_col].set_ylim(1100,75)
+                self.axes[season_row_map[season], axes_col].set_yticks([100, 200, 400, 600, 1000])
             self.axes[season_row_map[season], axes_col].get_yaxis().set_major_formatter(plt.ScalarFormatter())
     
     def plot_data(self, axes_row, variable, sensor, metric_unit=None,
@@ -621,8 +753,7 @@ class GSIConvFit2ObsFig(object):
                     if self.array:
                         plevs_bot_arr = np.array([float(p) for p in timeseries_data.pressure_levs_dict[metric][sensor]['asm']['plev_bot']])
                         plevs_top_arr = np.array([float(p) for p in timeseries_data.pressure_levs_dict[metric][sensor]['asm']['plev_top']])
-                        plevs_bnds = np.concatenate([plevs_bot_arr[:-1], plevs_top_arr[-2:]])[:-1].clip(min=50.)
-                        plevs_bnds = plevs_bnds.clip(max=1050.)
+                        plevs_bnds = np.concatenate([plevs_bot_arr[:-1], plevs_top_arr[-2:]])[:-1]
                 
                 if metric.split('_')[0] == 'bias' and sensor in timeseries_data.timestamp_dict[metric].keys() and len(timestamp_arr) > 0:
                     """ mean error plot
@@ -649,13 +780,18 @@ class GSIConvFit2ObsFig(object):
                     )
                     
                     if do_seasons:
-                        self.plot_seasons(bias_timeseries, plevs_bnds, pos, experiment)
+                        seasonal_mean_diffs = self.diffs_exp_bias.resample('QS-DEC').mean()
+                        self.plot_seasons(bias_timeseries, plevs_bnds, pos, experiment, metric_unit=metric_unit,
+                                          seasonal_mean_diffs=seasonal_mean_diffs,
+                                          xmin=-self.seasonal_bias_xmax,
+                                          xmax=self.seasonal_bias_xmax)
                         self.axes[3, pos].set_xlabel(f'bias ({metric_unit})')
                         for season_idx in range(4):
                             if self.dark_theme:
                                 self.axes[season_idx, pos].axvline(color='#A2A4A3', lw=0.5)
                             else:
                                 self.axes[season_idx, pos].axvline(color='black', lw=0.75, zorder=3)
+                                self.axes[season_idx, pos].set_xlim(left=-self.seasonal_bias_xmax, right=self.seasonal_bias_xmax)
                         
                     else:
                         mean_values_smooth = bias_timeseries.rolling(
@@ -667,13 +803,15 @@ class GSIConvFit2ObsFig(object):
                     if self.array and not do_seasons:
                         exp_comp_dict[experiment_idx][metric][sensor]={'expname':experiment,'values':bias_timeseries}
                         vmax = np.nanquantile(np.abs(mean_values_smooth.values), 0.97725)
+                        if vmax > self.seasonal_bias_xmax and experiment_idx == 0:
+                            self.seasonal_bias_xmax = vmax
                         pcmesh = self.axes[axes_row + experiment_idx + pos*iterator, 0].pcolormesh(
                             self.time_domain_bnds.index,
                             plevs_bnds,
                             mean_values_smooth.values[:,:-1].T,
                             cmap=bias_cmap,
-                            vmax = vmax,
-                            vmin = -vmax,
+                            vmax = self.seasonal_bias_xmax,
+                            vmin = -self.seasonal_bias_xmax,
                             shading='flat',
                             rasterized=True,
                             )
@@ -693,6 +831,7 @@ class GSIConvFit2ObsFig(object):
                         
                         if experiment_idx == 1:
                             diffs = exp_comp_dict[experiment_idx-1][metric][sensor]['values'] - exp_comp_dict[experiment_idx][metric][sensor]['values']
+                            self.diffs_exp_bias = diffs
                             values_to_plot = diffs.rolling(
                                 window=self.window_size,
                                 min_periods=self.min_periods,
@@ -783,10 +922,15 @@ class GSIConvFit2ObsFig(object):
                     )
                     
                     if do_seasons:
-                        self.plot_seasons(rmse_timeseries, plevs_bnds, axes_row + pos, experiment)
+                        seasonal_mean_diffs = self.diffs_exp_rmsd.resample('QS-DEC').mean()
+                        self.plot_seasons(rmse_timeseries, plevs_bnds, axes_row + pos, experiment, metric_unit=metric_unit,
+                                          seasonal_mean_diffs=seasonal_mean_diffs,
+                                          xmin=0.,
+                                          xmax=self.seasonal_rms_xmax)
                         self.axes[3, pos].set_xlabel(f'RMSD ({metric_unit})')
                         for season_idx in range(4):
-                            self.axes[season_idx, pos].set_xlim(left=0)
+                            self.axes[season_idx, pos].set_xlim(left=0, right=self.seasonal_rms_xmax)
+                            
                         
                     else:
                         rmse_values_smooth = rmse_timeseries.rolling(
@@ -798,12 +942,14 @@ class GSIConvFit2ObsFig(object):
                     if self.array and not do_seasons:
                         exp_comp_dict[experiment_idx][metric][sensor] = {'expname':experiment,'values':rmse_timeseries}
                         vmax = np.nanquantile(np.abs(rmse_values_smooth.values), 0.97725)
+                        if vmax > self.seasonal_rms_xmax and experiment_idx == 0:
+                            self.seasonal_rms_xmax = vmax
                         pcmesh = self.axes[axes_row + experiment_idx + pos*iterator, 0].pcolormesh(
                             self.time_domain_bnds.index,
                             plevs_bnds,
                             rmse_values_smooth.values[:,:-1].T,
                             cmap=cc.cm.CET_L3_r,
-                            vmax = vmax,
+                            vmax = self.seasonal_rms_xmax,
                             vmin = 0,
                             shading='flat',
                             rasterized=True,
@@ -826,6 +972,7 @@ class GSIConvFit2ObsFig(object):
                         
                         if experiment_idx == 1:
                             diffs = exp_comp_dict[experiment_idx-1][metric][sensor]['values'] - exp_comp_dict[experiment_idx][metric][sensor]['values']
+                            self.diffs_exp_rmsd = diffs
                             values_to_plot = diffs.rolling(
                                 window=self.window_size,
                                 min_periods=self.min_periods,
@@ -912,10 +1059,10 @@ class GSIConvFit2ObsFig(object):
                     )
                     
                     if do_seasons:
-                        self.plot_seasons(nobs_used_timeseries, plevs_bnds, axes_row + pos, experiment)
+                        self.plot_seasons(nobs_used_timeseries, plevs_bnds, axes_row + pos, experiment,metric_unit=metric_unit)
                         self.axes[3, pos].set_xlabel('n obs')
                         for season_idx in range(4):
-                            self.axes[season_idx, pos].set_xlim(left=0)
+                            self.axes[season_idx, pos].set_xlim(left=0, right=self.seasonal_nobs_xmax)
                         
                     else:
                         nobs_used_smooth = nobs_used_timeseries.rolling(
@@ -926,13 +1073,15 @@ class GSIConvFit2ObsFig(object):
                         
                     if self.array and not do_seasons:
                         exp_comp_dict[experiment_idx][metric][sensor] = {'expname':experiment,'values':nobs_used_timeseries}
-                        vmax = np.nanquantile(np.abs(nobs_used_smooth.values), 0.84)
+                        vmax = np.nanquantile(np.abs(nobs_used_smooth.values), 0.9)#0.84)
+                        if vmax > self.seasonal_nobs_xmax and experiment_idx == 0:
+                            self.seasonal_nobs_xmax = vmax
                         pcmesh = self.axes[axes_row + experiment_idx + pos*iterator, 0].pcolormesh(
                             self.time_domain_bnds.index,
                             plevs_bnds,
                             nobs_used_smooth.values[:,:-1].T,
                             cmap=cc.cm.CET_L1_r,
-                            vmax = vmax,
+                            vmax = self.seasonal_nobs_xmax,
                             vmin = 0,
                             shading='flat',
                             rasterized=True,
@@ -960,7 +1109,7 @@ class GSIConvFit2ObsFig(object):
                                 center=True,
                             ).mean()
                             label_to_show = f'{self.friendly_names_dict[exp_comp_dict[experiment_idx-1][metric][sensor]["expname"]]} - {self.friendly_names_dict[exp_comp_dict[experiment_idx][metric][sensor]["expname"]]}'
-                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.84)
+                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.9)#0.84)
                             pcmesh = self.axes[axes_row+ 1 + experiment_idx +pos*iterator, 0].pcolormesh(
                                 self.time_domain_bnds.index,
                                 plevs_bnds,
