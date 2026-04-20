@@ -47,8 +47,6 @@ def config():
             'GDAS',
             'NASA_GEOSIT_GSISTATS'
             'replay_observer_diagnostic_v1.1',
-
-            ,
             #'scout_run_v1',
             #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
             '3dvar_coupledreanl_scoutrun_v2'
@@ -491,6 +489,7 @@ class GSIConvFit2ObsFig(object):
         self.fig.suptitle(f"{title_str0}{title_str1}")
         plt.tight_layout()
         plt.subplots_adjust(top = 1. - 1.2 / figsize_length)
+        
         if self.interactive_figure:
             plt.show()
         else:
@@ -498,6 +497,8 @@ class GSIConvFit2ObsFig(object):
                 fig_title=f'gdas_gsi_conv_asm_{variable}_omb.png'
             elif self.gsi_it >=2:
                 fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
+            if self.array:
+                fig_title = f'type_{sensor}' + fig_title
             if do_seasons:
                 fig_title = 'seasonal_' + fig_title
             plt.savefig(os.path.join(output_dir, fig_title), dpi=600)
@@ -1169,14 +1170,15 @@ class GSIConvFit2ObsFig(object):
             
             experiment_idx += 1                
 
-def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=None, stop_date=None):
-    args = parse_arguments()
-    gsi_stage = args.gsi_stage
-    
+def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=None, stop_date=None,
+         pressure_bins=False):    
     # Initialize MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
+    
+    args = parse_arguments()
+    gsi_stage = args.gsi_stage
 
     # Load global configurations and friendly names
     global_config_dict, global_friendly_names_dict = config()
@@ -1205,8 +1207,10 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
         variable_list = list()
         for var in global_config_dict['variable_list']:
             variable_list.append(var)
-            
+    
     if args.pressure_bins:
+        pressure_bins=True
+    if pressure_bins:
         metric_name_key = 'metric_name'
     else:
         metric_name_key = 'name'
@@ -1220,33 +1224,33 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
             start_date=start_date,
             stop_date=stop_date,
             gsi_it=gsi_stage,
-            pressure_bins=args.pressure_bins)
+            pressure_bins=pressure_bins)
 
         # Split the data by variable (one part per variable)
         data_frame_parts_dict = dict()
         
-        for var in variable_list:
-            data_frame_parts_dict[var] = global_data_frame[
-                global_data_frame[metric_name_key].str.contains(var)]
+        for sensor in sensor_list:
+            data_frame_parts_dict[sensor] = global_data_frame[
+                global_data_frame[metric_name_key].str.contains(sensor)]
 
     else:
         data_frame_parts_dict = None
 
     # Calculate how many variables each process should handle
-    vars_per_process = len(variable_list) // size
+    sensors_per_process = len(sensor_list) // size
 
     # Handle leftover sensors (remaining variables are distributed to the first few processes)
-    leftover_vars = len(variable_list) % size
+    leftover_sensors = len(sensor_list) % size
     
     if rank == 0:
         for i in range(0, size):
             # Calculate the subset of variables for this rank
-            start_idx = i * vars_per_process + min(i, leftover_vars)
-            end_idx = start_idx + vars_per_process + (1 if i < leftover_vars else 0)
-            rank_vars = variable_list[start_idx:end_idx]
+            start_idx = i * sensors_per_process + min(i, leftover_sensors)
+            end_idx = start_idx + sensors_per_process + (1 if i < leftover_sensors else 0)
+            rank_sensors = sensor_list[start_idx:end_idx]
             
             # Prepare the data for this rank
-            data_to_send = {var: data_frame_parts_dict[var] for var in rank_vars}
+            data_to_send = {sensor: data_frame_parts_dict[sensor] for sensor in rank_sensors}
 
             if i==0:
                 local_data_frames = data_to_send
@@ -1257,7 +1261,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
 
     # Each process works on its part of the data
     if local_data_frames is not None:
-        for var, data_frame in local_data_frames.items():
+        for sensor, data_frame in local_data_frames.items():
             # Only work on data for the specific variable assigned to the process
             '''
             print(f"Rank {rank} is processing variable: {var} and here is "
@@ -1268,7 +1272,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                 data_frame=data_frame,
                 input_data_frame=True,
                 gsi_it=gsi_stage,
-                pressure_bins=args.pressure_bins
+                pressure_bins=pressure_bins
             )
             experiment_metrics_timeseries_data.variable_list = [var]
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list

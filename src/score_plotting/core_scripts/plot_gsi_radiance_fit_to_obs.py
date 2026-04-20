@@ -86,7 +86,7 @@ def config():
                 'ls': '-',
                 'lw': 1.0
             },
-            '3dvar_coupledreanl_scoutrun_v1' : {
+            '3dvar_coupledreanl_scoutrun_v2' : {
                 'color' : '#8D7334',
                 'ls': '-',
                 'lw': 0.5
