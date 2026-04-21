@@ -1262,7 +1262,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
             local_data_frames = comm.recv(source=0, tag=11+rank)
             
     else: # no parallelization
-        local_data_frames = data_frame_parts_dict:
+        local_data_frames = data_frame_parts_dict
 
     # Each process works on its part of the data
     if local_data_frames is not None:
