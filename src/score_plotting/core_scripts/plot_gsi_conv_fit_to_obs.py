@@ -498,7 +498,8 @@ class GSIConvFit2ObsFig(object):
             elif self.gsi_it >=2:
                 fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
             if self.array:
-                fig_title = f'type_{sensor}' + fig_title
+                str_sensor = str(sensor)
+                fig_title = f'type_{str_sensor}_' + fig_title
             if do_seasons:
                 fig_title = 'seasonal_' + fig_title
             plt.savefig(os.path.join(output_dir, fig_title), dpi=600)
@@ -1231,7 +1232,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
         
         for sensor in sensor_list:
             data_frame_parts_dict[sensor] = global_data_frame[
-                global_data_frame[metric_name_key].str.contains(sensor)]
+                global_data_frame[metric_name_key].str.contains(str(sensor))]
 
     else:
         data_frame_parts_dict = None
