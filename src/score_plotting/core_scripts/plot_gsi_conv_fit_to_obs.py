@@ -1260,34 +1260,50 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                     comm.send(data_to_send, dest=i, tag=11+i)
         else:
             local_data_frames = comm.recv(source=0, tag=11+rank)
+        
+        # Each process works on its part of the data
+        if local_data_frames is not None:
+            for sensor, data_frame in local_data_frames.items():
+                # Only work on data for the specific variable assigned to the process
+                '''
+                print(f"Rank {rank} is processing variable: {var} and here is "
+                       f"the data frame: {data_frame.metric_type}")
             
-    else: # no parallelization
-        local_data_frames = data_frame_parts_dict
+                '''
+                experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
+                    data_frame=data_frame,
+                    input_data_frame=True,
+                    gsi_it=gsi_stage,
+                    pressure_bins=pressure_bins
+                )
+            
+                experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
+                experiment_metrics_timeseries_data.experiment_list = experiment_list
+                experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
+                experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
+                experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
+                                                                    days_to_smooth=args.days_to_smooth,
+                                                                    da_cycle=args.da_cycle,
+                                                                    dark_theme=args.dark_theme)
+            
+    elif data_frame_parts_dict is not None: # no parallelization
+        
+        experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
+            data_frame=data_frame_parts_dict,
+            input_data_frame=True,
+            gsi_it=gsi_stage,
+            pressure_bins=pressure_bins
+        )
+        
+        experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
+        experiment_metrics_timeseries_data.experiment_list = experiment_list
+        experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
+        experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
+        experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
+                                                            days_to_smooth=args.days_to_smooth,
+                                                            da_cycle=args.da_cycle,
+                                                            dark_theme=args.dark_theme)
 
-    # Each process works on its part of the data
-    if local_data_frames is not None:
-        for sensor, data_frame in local_data_frames.items():
-            # Only work on data for the specific variable assigned to the process
-            '''
-            print(f"Rank {rank} is processing variable: {var} and here is "
-                   f"the data frame: {data_frame.metric_type}")
-            
-            '''
-            experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
-                data_frame=data_frame,
-                input_data_frame=True,
-                gsi_it=gsi_stage,
-                pressure_bins=pressure_bins
-            )
-            
-            experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
-            experiment_metrics_timeseries_data.experiment_list = experiment_list
-            experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
-            experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
-            experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
-                                                                days_to_smooth=args.days_to_smooth,
-                                                                da_cycle=args.da_cycle,
-                                                                dark_theme=args.dark_theme)
 
 def main():
     """

@@ -40,7 +40,7 @@ def run(experiment_list = [
     )
 
 def main():
-    run(experiment_list=experiment_list, variable_list=variable_list)
+    run()
 
 if __name__=='__main__':
     main()
