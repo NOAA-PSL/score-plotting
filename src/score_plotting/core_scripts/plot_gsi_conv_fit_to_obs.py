@@ -1237,28 +1237,32 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
     else:
         data_frame_parts_dict = None
 
-    # Calculate how many variables each process should handle
-    sensors_per_process = len(sensor_list) // size
+    if pressure_bins:
+        # Calculate how many variables each process should handle
+        sensors_per_process = len(sensor_list) // size
 
-    # Handle leftover sensors (remaining variables are distributed to the first few processes)
-    leftover_sensors = len(sensor_list) % size
+        # Handle leftover sensors (remaining variables are distributed to the first few processes)
+        leftover_sensors = len(sensor_list) % size
     
-    if rank == 0:
-        for i in range(0, size):
-            # Calculate the subset of variables for this rank
-            start_idx = i * sensors_per_process + min(i, leftover_sensors)
-            end_idx = start_idx + sensors_per_process + (1 if i < leftover_sensors else 0)
-            rank_sensors = sensor_list[start_idx:end_idx]
+        if rank == 0:
+            for i in range(0, size):
+                # Calculate the subset of variables for this rank
+                start_idx = i * sensors_per_process + min(i, leftover_sensors)
+                end_idx = start_idx + sensors_per_process + (1 if i < leftover_sensors else 0)
+                rank_sensors = sensor_list[start_idx:end_idx]
             
-            # Prepare the data for this rank
-            data_to_send = {sensor: data_frame_parts_dict[sensor] for sensor in rank_sensors}
+                # Prepare the data for this rank
+                data_to_send = {sensor: data_frame_parts_dict[sensor] for sensor in rank_sensors}
 
-            if i==0:
-                local_data_frames = data_to_send
-            else:
-                comm.send(data_to_send, dest=i, tag=11+i)
-    else:
-        local_data_frames = comm.recv(source=0, tag=11+rank)
+                if i==0:
+                    local_data_frames = data_to_send
+                else:
+                    comm.send(data_to_send, dest=i, tag=11+i)
+        else:
+            local_data_frames = comm.recv(source=0, tag=11+rank)
+            
+    else: # no parallelization
+        local_data_frames = data_frame_parts_dict:
 
     # Each process works on its part of the data
     if local_data_frames is not None:
@@ -1275,7 +1279,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                 gsi_it=gsi_stage,
                 pressure_bins=pressure_bins
             )
-            experiment_metrics_timeseries_data.variable_list = [var]
+            
             experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
             experiment_metrics_timeseries_data.experiment_list = experiment_list
             experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
