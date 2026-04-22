@@ -45,10 +45,10 @@ def config():
         'experiment_list': [
             'cfsr',
             'GDAS',
-            'NASA_GEOSIT_GSISTATS'
+            'NASA_GEOSIT_GSISTATS',
             'replay_observer_diagnostic_v1.1',
             #'scout_run_v1',
-            #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+            '3dvar_coupledreanl_scoutrun_v1_test1',
             '3dvar_coupledreanl_scoutrun_v2'
                          ],
         
@@ -96,17 +96,17 @@ def config():
                 'ls': '-',
                 'lw': 0.75
             },
-            '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
-                'color' : '#A2A4A3',
+            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+                'color' : '#000000',
                 'ls': '-',
-                'lw': 1.5
+                'lw': 0.5
             },
             '3dvar_coupledreanl_scoutrun_v2' : {
                 'color' : '#8D7334',
                 'color2': '#F3F0E9',
                 'marker': '+',
                 'ls': '-',
-                'lw': 0.5,
+                'lw': 0.75,
                 'ls2': '--',
                 'zorder':2
             }
@@ -141,8 +141,8 @@ def config():
             "GDAS": "GDAS",
             "replay_observer_diagnostic_v1.1": "Replay",
             "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-            "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
-            '3dvar_coupledreanl_scoutrun_v2': "weakly coupled scout (3DVar)",
+            "3dvar_coupledreanl_scoutrun_v1_test1": "WCS (v1)",
+            '3dvar_coupledreanl_scoutrun_v2': "WCS (v2)",
             'cfsr':"CFSR"
                          }
                          
@@ -368,20 +368,25 @@ class GSIConvFit2ObsFig(object):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
+        
+        if self.array:
+            axes_row = 0
+            iterator = (len(self.experiment_list) * (len(self.experiment_list)  + 1)) // 2
+            nrows = iterator * ncols
+            nmetrics=ncols
+            ncols = 1
+            figsize_length = 9.06 * (nrows/9.)
+            figsize_width = 6.5#7.48
+        
+        
         for variable in self.variable_list:
             local_data_frame = self.data_frame[self.data_frame[metric_name_key].str.contains(variable)]
-            sensors_to_show = sorted(set(local_data_frame.metric_instrument_name))     
+            
+            sensors_to_show = sorted(set(local_data_frame.metric_instrument_name))
             
             if len(sensors_to_show) > 0:
-                
-                if self.array:
-                   iterator = (len(self.experiment_list) * (len(self.experiment_list)  + 1)) // 2
-                   nrows = iterator * ncols
-                   nmetrics=ncols
-                   ncols = 1
-                   figsize_length = 9.06 * (nrows/9.)
-                   figsize_width = 6.5#7.48
-                else:
+                axes_row = 0
+                if not self.array:
                     nrows = len(sensors_to_show)
                     iterator = 1
                     figsize_length = 4.53 * nrows
@@ -391,8 +396,11 @@ class GSIConvFit2ObsFig(object):
                                             squeeze=False,
                                             figsize=(figsize_width, figsize_length))
             
-                axes_row = 0
                 for sensor in sensors_to_show:
+                    
+                    if self.array:
+                        axes_row=0
+                    
                     self.max_yerr=0.
                     if variable in self.variable_list and sensor is not None:
                         experiment_timeseries_datetime_init=None
@@ -456,7 +464,7 @@ class GSIConvFit2ObsFig(object):
                                           figsize_length=figsize_length*(nmetrics/iterator), output_dir=output_dir,
                                           do_seasons=True)
                         
-                        axes_row += (1 * iterator)    
+                        axes_row += (1 * iterator)
                                           
                 if not self.array:
                     self.finalize_fig(variable, sensor, data_frame_to_show,
@@ -498,7 +506,7 @@ class GSIConvFit2ObsFig(object):
             elif self.gsi_it >=2:
                 fig_title=f'gdas_gsi_conv_asm_{variable}_oma.png'
             if self.array:
-                str_sensor = str(sensor)
+                str_sensor = str(self.sensor_id)
                 fig_title = f'type_{str_sensor}_' + fig_title
             if do_seasons:
                 fig_title = 'seasonal_' + fig_title
@@ -1230,9 +1238,10 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
         # Split the data by variable (one part per variable)
         data_frame_parts_dict = dict()
         
-        for sensor in sensor_list:
-            data_frame_parts_dict[sensor] = global_data_frame[
-                global_data_frame[metric_name_key].str.contains(str(sensor))]
+        if pressure_bins:
+            for sensor in sensor_list:
+                data_frame_parts_dict[sensor] = global_data_frame[
+                    global_data_frame[metric_name_key].str.contains(str(sensor))]
 
     else:
         data_frame_parts_dict = None
@@ -1277,7 +1286,9 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                     pressure_bins=pressure_bins
                 )
             
+                experiment_metrics_timeseries_data.variable_list = variable_list
                 experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
+                experiment_metrics_timeseries_data.sensor_id = sensor
                 experiment_metrics_timeseries_data.experiment_list = experiment_list
                 experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
                 experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
@@ -1286,10 +1297,10 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                                                                     da_cycle=args.da_cycle,
                                                                     dark_theme=args.dark_theme)
             
-    elif data_frame_parts_dict is not None: # no parallelization
+    elif global_data_frame is not None: # no parallelization
         
         experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
-            data_frame=data_frame_parts_dict,
+            data_frame=global_data_frame,
             input_data_frame=True,
             gsi_it=gsi_stage,
             pressure_bins=pressure_bins

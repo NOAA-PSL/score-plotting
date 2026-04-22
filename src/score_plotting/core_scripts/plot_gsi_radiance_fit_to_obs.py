@@ -45,7 +45,7 @@ def config():
                             'NASA_GEOSIT_GSISTATS',
                             'replay_observer_diagnostic_v1.1',
                             #'scout_run_v1',
-                            #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
+                            '3dvar_coupledreanl_scoutrun_v1_test1',
                             '3dvar_coupledreanl_scoutrun_v2'
                          ],
         
@@ -81,15 +81,15 @@ def config():
                 'ls': '-',
                 'lw': 0.5
             },
-            '3dvar_coupledreanl_scoutrun_1979streamv1_test1' : {
-                'color' : '#0A3758',
+            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+                'color' : '#000000',
                 'ls': '-',
-                'lw': 1.0
+                'lw': 0.5
             },
             '3dvar_coupledreanl_scoutrun_v2' : {
                 'color' : '#8D7334',
                 'ls': '-',
-                'lw': 0.5
+                'lw': 0.75
             }
         },
         'sensor_list': get_instrument_channels().keys(),
@@ -105,10 +105,10 @@ def config():
                          "scout_run_v1": "atmosphere scout (3DVar)",
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
-                         "replay_observer_diagnostic_v1.1": "UFS-replay",
+                         "replay_observer_diagnostic_v1.1": "Replay",
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-                         "3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
-                         '3dvar_coupledreanl_scoutrun_v2': "weakly coupled scout (3DVar)",
+                         "3dvar_coupledreanl_scoutrun_v1_test1": "WCS (v1)",
+                         '3dvar_coupledreanl_scoutrun_v2': "WCS (v2)",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
