@@ -6,9 +6,9 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --nodes=1                      # Number of nodes (adjust based on your requirements)
 #SBATCH --time=6:00:00                # Max wall time (adjust as needed)
-#SBATCH --partition=bigmem #batch              # Partition to use
+#SBATCH --partition=medmem #batch              # Partition to use
 #SBATCH --mail-type=ALL                # Send an email when the job starts, ends, or fails
-#SBATCH --mail-user=Chesley.Mccoll@noaa.gov  # Email address for notifications
+#SBATCH --mail-user=Adam.Schneider@noaa.gov  # Email address for notifications
 
 source $HOME/.bash_profile
 micromamba activate darr_score_sqlalchemy1_dev_env
