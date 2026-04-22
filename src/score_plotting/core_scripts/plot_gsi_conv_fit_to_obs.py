@@ -1297,23 +1297,24 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                                                                     da_cycle=args.da_cycle,
                                                                     dark_theme=args.dark_theme)
             
-    elif global_data_frame is not None: # no parallelization
+    elif rank==0: # no parallelization
+        if global_data_frame is not None:
         
-        experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
-            data_frame=global_data_frame,
-            input_data_frame=True,
-            gsi_it=gsi_stage,
-            pressure_bins=pressure_bins
-        )
+            experiment_metrics_timeseries_data = GSIConvFit2ObsFig(
+                data_frame=global_data_frame,
+                input_data_frame=True,
+                gsi_it=gsi_stage,
+                pressure_bins=pressure_bins
+            )
         
-        experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
-        experiment_metrics_timeseries_data.experiment_list = experiment_list
-        experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
-        experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
-        experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
-                                                            days_to_smooth=args.days_to_smooth,
-                                                            da_cycle=args.da_cycle,
-                                                            dark_theme=args.dark_theme)
+            experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
+            experiment_metrics_timeseries_data.experiment_list = experiment_list
+            experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
+            experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
+            experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
+                                                                days_to_smooth=args.days_to_smooth,
+                                                                da_cycle=args.da_cycle,
+                                                                dark_theme=args.dark_theme)
 
 
 def main():
