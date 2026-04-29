@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=gsi_radiance_plots      # Name of the job
-#SBATCH --output=plot_gsi%j.log     # Output log file with job ID
+#SBATCH --output=plot_gsi%j_out.log     # Output log file with job ID
+#SBATCH --error=plot_gsi%j_err.log     
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1           # Number of tasks (CPUs) per node
 #SBATCH --cpus-per-task=2
@@ -14,21 +15,12 @@ source $HOME/.bash_profile
 micromamba activate darr_score_sqlalchemy1_dev_env
 #which mpirun
 # Run the MPI Python script using mpiexec
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor gmi /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor mhs /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor saphir /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor sndr /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor sndrD1 /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor sndrD2 /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor sndrD3 /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor sndrD4 /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor amsre /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor amsr2 /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor tmi /media/darr/results/figures/brightness_temperature_error_timeseries
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor abi /media/darr/results/figures/brightness_temperature_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor ahi /media/darr/results/figures/brightness_temperature_error_timeseries
-mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor iasi /media/darr/results/figures/brightness_temperature_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor seviri /media/darr/results/figures/brightness_temperature_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor imgr /media/darr/results/figures/brightness_temperature_error_timeseries
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor mws /media/darr/results/figures/brightness_temperature_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor cris /media/darr/results/figures/brightness_temperature_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor cris-fsr /media/darr/results/figures/brightness_temperature_error_timeseries
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor iasi /media/darr/results/figures/brightness_temperature_error_timeseries

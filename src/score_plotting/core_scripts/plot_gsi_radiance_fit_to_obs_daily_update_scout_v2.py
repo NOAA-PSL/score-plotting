@@ -25,7 +25,19 @@ def main():
             'msu',
             # Advanced Very-High-Resolution Radiometers:
             'avhrr2',
-            'avhrr3'
+            'avhrr3',
+            # others
+            'gmi',
+            'mhs',
+            'saphir',
+            'sndr',
+            'sndrD1',
+            'sndrD2',
+            'sndrD3',
+            'sndrD4',
+            'amsre',
+            'amrs2',
+            'tmi'
         ],
         start_date='1996-10-01 00:00:00',
         stop_date='1997-09-30 23:59:59'
