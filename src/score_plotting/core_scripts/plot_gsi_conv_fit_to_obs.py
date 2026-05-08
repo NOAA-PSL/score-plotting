@@ -47,7 +47,7 @@ def config():
             'GDAS',
             'NASA_GEOSIT_GSISTATS',
             'replay_observer_diagnostic_v1.1',
-            #'scout_run_v1',
+            'scout_run_v1',
             '3dvar_coupledreanl_scoutrun_v1_test1',
             '3dvar_coupledreanl_scoutrun_v2'
                          ],
@@ -78,7 +78,7 @@ def config():
                 'lw': 1.25
             },
             'replay_observer_diagnostic_v1.1' : {
-                'color' : '#0A3758',
+                'color' : '#096FAE',#'#0A3758',
                 'color2': '#EEF5F8',
                 'marker': '+',
                 'ls': '-',
@@ -87,9 +87,9 @@ def config():
                 'zorder':2
             },
             'scout_run_v1' : {
-                'color' : '#565A5C',
+                'color' : '#000000',
                 'ls': '-',
-                'lw': 1.
+                'lw': 0.5
             },
             'replay_observer_diagnostic_overlap' : {
                 'color' : '#8D7334',
@@ -136,13 +136,13 @@ def config():
     have a basic friendly dict for that
     '''
     friendly_names_dict={
-            "scout_run_v1": "atmosphere scout (3DVar)",
+            "scout_run_v1": "scout-atm (v0.01)",
             "NASA_GEOSIT_GSISTATS": "GEOS-IT",
             "GDAS": "GDAS",
             "replay_observer_diagnostic_v1.1": "Replay",
             "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-            "3dvar_coupledreanl_scoutrun_v1_test1": "WCS (v1)",
-            '3dvar_coupledreanl_scoutrun_v2': "WCS (v2)",
+            "3dvar_coupledreanl_scoutrun_v1_test1": "scout-1 (v0.1)",
+            '3dvar_coupledreanl_scoutrun_v2': "scout-2 (v0.21)",
             'cfsr':"CFSR"
                          }
                          
