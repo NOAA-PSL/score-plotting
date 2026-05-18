@@ -387,13 +387,15 @@ class GSIRadianceFit2ObsFig(object):
                                             r'($^{\circ}$C)')
                     axes[row, 1].set_ylabel(f'Brightness temp RMS {difference_str} '
                                             '($^{\circ}$C)')
-                    axes[row, 2].set_ylabel(f'Number of obs used')
+                    axes[row, 2].set_ylabel(f'Number of obs used (+) and tossed (-)')
                     #rejection_ratio_ax = axes[row, 2].twinx()
                     #rejection_ratio_ax.set_ylabel('Percentage of observations tossed (%)')
                     if self.dark_theme:
-                        axes[row, 0].axhline(color='#A2A4A3', lw=0.5)
+                        axes[row, 0].axhline(color='#A2A4A3', lw=0.75)
+                        axes[row, 2].axhline(color='#A2A4A3', lw=0.75)
                     else:
-                        axes[row, 0].axhline(color='black', lw=0.5)
+                        axes[row, 0].axhline(color='black', lw=0.75)
+                        axes[row, 2].axhline(color='black', lw=0.75)
 
                     #rejection_ratio_ax.set_ylim(0, 100)
                     #rejection_ratio_ax.set_yticks(np.arange(0, 100.1, 20))                    
@@ -715,6 +717,86 @@ class GSIRadianceFit2ObsFig(object):
                                     
                                     #axes[row,2].legend(loc='lower right')
                                     #rejection_ratio_ax.legend(loc='upper right')
+                                    
+                                elif stat_label == f'nobs_tossed_GSIstage_{self.gsi_it}' and sat_sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                                    """ nobs tossed and rejection ratio plot
+                                    """
+                                    nobs_tossed_timeseries = pd.Series(
+                                        data=np.array(
+                                            value_dict[sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_data.timestamp_dict[stat_label][sat_sensor]
+                                    ).astype(float)
+
+                                    use_flag_timeseries = pd.Series(
+                                        data=np.array(
+                                            timeseries_dict[
+                                                f'{sensor}_use_GSIstage_None'].value_dict[
+                                                    'use_GSIstage_None'][sat_sensor]
+                                        )[:, channel_idx],
+                                        index=timeseries_dict[f'{sensor}_use_GSIstage_None'].timestamp_dict[
+                                                'use_GSIstage_None'][sat_sensor]
+                                    ).astype(float)
+
+                                    nobs_tossed_timeseries = nobs_tossed_timeseries.combine_first(
+                                        self.time_domain
+                                    )
+                                    
+                                    use_flag_timeseries = use_flag_timeseries.combine_first(
+                                        self.time_domain
+                                    )
+                                    
+                                    nobs_tossed_smooth = nobs_tossed_timeseries.rolling(
+                                        window=self.window_size,
+                                        min_periods=self.min_periods,
+                                        center=True,
+                                        #win_type='triang'
+                                    ).mean()
+                                    
+                                    axes[row, 2].plot(
+                                        nobs_tossed_timeseries.index,
+                                        -1. * nobs_tossed_timeseries.values,
+                                        marker='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=alpha_background,
+                                        lw=0.5,
+                                        ls='-',
+                                        zorder=2
+                                    )
+                                    
+                                    axes[row, 2].plot(
+                                        nobs_tossed_smooth.index,
+                                        -1. * nobs_tossed_smooth.where(
+                                            use_flag_timeseries < 1
+                                        ).values,
+                                        marker='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=alpha_foreground,
+                                        lw=self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=':',
+                                        zorder=3
+                                        #label=f"{self.friendly_names_dict[experiment]}"
+                                    )
+                                    
+                                    axes[row, 2].plot(
+                                        nobs_tossed_smooth.index,
+                                        -1. * nobs_tossed_smooth.where(
+                                            use_flag_timeseries > 0
+                                        ).values,
+                                        marker='none',
+                                        color=self.config_dict['experiment_plot_dict']
+                                            [experiment]['color'],
+                                        alpha=1.0,
+                                        lw=4.*self.config_dict['experiment_plot_dict']
+                                            [experiment]['lw'],
+                                        ls=self.config_dict['experiment_plot_dict']
+                                            [experiment]['ls'],
+                                        label=f"{self.friendly_names_dict[experiment]}",
+                                        zorder=3
+                                    )
 
                                 for col_idx in range(ncols):
                                     if self.dark_theme:
@@ -776,8 +858,11 @@ class GSIRadianceFit2ObsFig(object):
                     axes[row, 1].set_ylim(0, self.yaxis_obs_err_scaler*max_yerr)
                     
                     nobs_ylims = axes[row, 2].get_ylim()
+                    
+                    """"
                     if nobs_ylims[0] < 0:
                         axes[row, 2].set_ylim(bottom=0)
+                    """
                 
                 fig.suptitle(f"{title_str0}{title_str1}")
                 plt.tight_layout()
