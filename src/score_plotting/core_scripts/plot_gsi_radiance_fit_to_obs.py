@@ -51,7 +51,7 @@ def config():
         
         'experiment_plot_dict': {
             'cfsr' :
-               {'color' : '#565A5C',
+               {'color' : 'green',
                 'ls': '-',
                 'lw': 1.5
             },
@@ -82,7 +82,7 @@ def config():
                 'lw': 0.5
             },
             '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#000000',
+                'color' : '#565A5C',
                 'ls': '-',
                 'lw': 0.5
             },
@@ -321,7 +321,7 @@ class GSIRadianceFit2ObsFig(object):
     
     def make_figures(self, sensor, ncols=3, init_datetime=None,
                      alpha_foreground=0.9,
-                     alpha_background=0.5,
+                     alpha_background=0.1,
                      interactive=False):
         
         sensor_longname = self.sensor_longnames[sensor]

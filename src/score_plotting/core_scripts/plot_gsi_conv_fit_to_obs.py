@@ -63,7 +63,7 @@ def config():
                  'zorder':1
             },
             'cfsr' :
-               {'color' : '#565A5C',
+               {'color' : 'green',
                 'color2': '#A2A4A3',
                 'marker': 'x',
                 'ls': '-',
@@ -97,7 +97,7 @@ def config():
                 'lw': 0.75
             },
             '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#000000',
+                'color' : '#565A5C',
                 'ls': '-',
                 'lw': 0.5
             },
@@ -740,7 +740,7 @@ class GSIConvFit2ObsFig(object):
     
     def plot_data(self, axes_row, variable, sensor, metric_unit=None,
                      alpha_foreground=0.9,
-                     alpha_background=0.5,
+                     alpha_background=0.1,
                      iterator=None,
                      do_seasons=False):
         
