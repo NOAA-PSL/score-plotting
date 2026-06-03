@@ -8,9 +8,9 @@ from score_plotting.core_scripts import plot_gsi_conv_fit_to_obs
 
 def run(experiment_list = [
             '3dvar_coupledreanl_scoutrun_v2',
-            'replay_observer_diagnostic_v1.1',
+            #'replay_observer_diagnostic_v1.1',
             #'NASA_GEOSIT_GSISTATS',
-            #'cfsr',
+            'cfsr',
             #'GDAS',
             #'replay_observer_diagnostic_v1',
             #'replay_observer_diagnostic_overlap',
@@ -22,8 +22,8 @@ def run(experiment_list = [
             'fit_t_data', # fit of temperature data (K)
             'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
-        start_date='1978-10-01 00:00:00',
-        stop_date='2028-09-30 23:59:59'):
+        start_date='1987-10-01 00:00:00',
+        stop_date='2024-09-30 23:59:59'):
 
     plot_gsi_conv_fit_to_obs.prun(
         # Default is for fit of surface pressure data (hPa)
