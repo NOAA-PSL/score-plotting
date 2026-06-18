@@ -94,7 +94,7 @@ def config():
         },
         'sensor_list': get_instrument_channels().keys(),
         'start_date': '2022-10-01 00:00:00',
-        'stop_date': '2023-09-30 23:59:59',
+        'stop_date': '2024-03-30 23:59:59',
     }
     
     '''
