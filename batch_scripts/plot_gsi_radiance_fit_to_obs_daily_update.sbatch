@@ -16,12 +16,16 @@ micromamba activate darr_score_sqlalchemy1_dev_env
 # Run the MPI Python script using mpiexec
 # 2023 stream
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update /media/darr/results/figures/brightness_temperature_error_timeseries
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update --gsi_stage 2 /media/darr/results/figures/brightness_temperature_error_timeseries
 
 # 1997 stream
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update_scout_v2 /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update_scout_v2 --gsi_stage 2 /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout
 
 # 1993 stream
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update_scout_v2_1993 /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_1993
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update_scout_v2_1993 --gsi_stage 2 /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_1993
 
 # 1988 stream
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update_scout_v2_1988 /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_1988
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_daily_update_scout_v2_1988 --gsi_stage 2 /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_1988
