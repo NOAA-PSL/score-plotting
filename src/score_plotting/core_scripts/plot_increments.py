@@ -186,7 +186,7 @@ plot_control_dict6 = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                      
 plot_control_dict_forward_ext = {'date_range': {'datetime_str': '%Y-%m-%d %H:%M:%S',
                                     'start': '2024-10-01 00:00:00',
-                                    'end': '2026-04-01 00:00:00'},
+                                    'end': '2026-09-30 23:59:59'},
                      'db_request_name': 'expt_metrics',
                      'method': 'GET',
                      'experiments': [{'graph_color': 'black',

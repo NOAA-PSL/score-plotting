@@ -51,23 +51,23 @@ def config():
         
         'experiment_plot_dict': {
             'cfsr' :
-               {'color' : 'green',
+               {'color' : '#2160ae',
                 'ls': '-',
-                'lw': 1.5
+                'lw': 1.
             },
             
             'NASA_GEOSIT_GSISTATS' :
-                {'color' : '#E4002B',
+                {'color' : '#691917',
                  'ls': '-',
                  'lw': 1.
             },
             'GDAS' : {
-                'color' : '#0085CA',
+                'color' : '#2160ae',
                 'ls': '-',
-                'lw': 1.25
+                'lw': 0.75
             },
             'replay_observer_diagnostic_v1.1' : {
-                'color' : '#096FAE', #'#0A3758',
+                'color' : '#29cfed', #'#0A3758',
                 'ls': '-',
                 'lw': 0.75
             },
@@ -77,19 +77,19 @@ def config():
                 'lw': 0.5
             },
             'replay_observer_diagnostic_overlap' : {
-                'color' : '#8D7334',
+                'color' : '#29cfed',
                 'ls': '-',
                 'lw': 0.5
             },
             '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#565A5C',
-                'ls': '-',
-                'lw': 0.5
-            },
-            '3dvar_coupledreanl_scoutrun_v2' : {
-                'color' : '#8D7334',
+                'color' : '#9b8d62',
                 'ls': '-',
                 'lw': 0.75
+            },
+            '3dvar_coupledreanl_scoutrun_v2' : {
+                'color' : '#9b8d62',
+                'ls': '-',
+                'lw': 0.5
             }
         },
         'sensor_list': get_instrument_channels().keys(),
@@ -102,13 +102,13 @@ def config():
     have a basic friendly dict for that
     '''
     friendly_names_dict={'cfsr': "CFSR",
-                         "scout_run_v1": "scout-atm (v0.01)",
+                         "scout_run_v1": "scout-atm",
                          "NASA_GEOSIT_GSISTATS": "GEOS-IT",
                          "GDAS": "GDAS",
                          "replay_observer_diagnostic_v1.1": "Replay",
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-                         "3dvar_coupledreanl_scoutrun_v1_test1": "scout-1 (v0.1)",
-                         '3dvar_coupledreanl_scoutrun_v2': "scout-2 (v0.21)",
+                         "3dvar_coupledreanl_scoutrun_v1_test1": "scout-1",
+                         '3dvar_coupledreanl_scoutrun_v2': "scout-2",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",

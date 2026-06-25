@@ -54,8 +54,8 @@ def config():
         
         'experiment_plot_dict': {
                         'NASA_GEOSIT_GSISTATS' :
-                {'color' : '#E4002B',
-                 'color2': '#A2A4A3',
+                {'color' : '#691917',
+                 'color2': '#691917',
                  'marker': 'x',
                  'ls': '-',
                  'ls2': ':',
@@ -63,23 +63,23 @@ def config():
                  'zorder':1
             },
             'cfsr' :
-               {'color' : 'green',
-                'color2': '#A2A4A3',
+               {'color' : '#2160ae',
+                'color2': '#2160ae',
                 'marker': 'x',
                 'ls': '-',
                 'ls2': ':',
-                'lw': 1.5,
+                'lw': 1.,
                 'zorder':1,
             },
             
             'GDAS' : {
-                'color' : '#0085CA',
+                'color' : '#2160ae',
                 'ls': '-',
-                'lw': 1.25
+                'lw': 0.75
             },
             'replay_observer_diagnostic_v1.1' : {
-                'color' : '#096FAE',#'#0A3758',
-                'color2': '#EEF5F8',
+                'color' : '#29cfed',#'#0A3758',
+                'color2': '#29cfed',
                 'marker': '+',
                 'ls': '-',
                 'lw': 0.75,
@@ -92,21 +92,21 @@ def config():
                 'lw': 0.5
             },
             'replay_observer_diagnostic_overlap' : {
-                'color' : '#8D7334',
-                'ls': '-',
-                'lw': 0.75
-            },
-            '3dvar_coupledreanl_scoutrun_v1_test1' : {
-                'color' : '#565A5C',
+                'color' : '#29cfed',
                 'ls': '-',
                 'lw': 0.5
             },
+            '3dvar_coupledreanl_scoutrun_v1_test1' : {
+                'color' : '#9b8d62',
+                'ls': '-',
+                'lw': 0.75
+            },
             '3dvar_coupledreanl_scoutrun_v2' : {
-                'color' : '#8D7334',
-                'color2': '#F3F0E9',
+                'color' : '#9b8d62',
+                'color2': '#9b8d62',
                 'marker': '+',
                 'ls': '-',
-                'lw': 0.75,
+                'lw': 0.5,
                 'ls2': '--',
                 'zorder':2
             }
@@ -136,13 +136,13 @@ def config():
     have a basic friendly dict for that
     '''
     friendly_names_dict={
-            "scout_run_v1": "scout-atm (v0.01)",
+            "scout_run_v1": "scout-atm",
             "NASA_GEOSIT_GSISTATS": "GEOS-IT",
             "GDAS": "GDAS",
             "replay_observer_diagnostic_v1.1": "Replay",
             "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
-            "3dvar_coupledreanl_scoutrun_v1_test1": "scout-1 (v0.1)",
-            '3dvar_coupledreanl_scoutrun_v2': "scout-2 (v0.21)",
+            "3dvar_coupledreanl_scoutrun_v1_test1": "scout-1",
+            '3dvar_coupledreanl_scoutrun_v2': "scout-2",
             'cfsr':"CFSR"
                          }
                          
