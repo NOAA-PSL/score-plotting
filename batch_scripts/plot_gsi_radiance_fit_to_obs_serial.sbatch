@@ -33,6 +33,20 @@ mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --gsi
 #mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor cris-fsr /media/darr/results/figures/brightness_temperature_error_timeseries
 #mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs --sensor iasi /media/darr/results/figures/brightness_temperature_error_timeseries
 
+# 2018 stream
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2018 --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2018
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2018 --gsi_stage 2 --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2018
+
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2018 --sensor mws /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2018
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2018 --gsi_stage 2 --sensor mws /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2018
+
+# 2013 stream
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2013 --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2013
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2013 --gsi_stage 2 --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2013
+
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2013 --sensor mws /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2013
+mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2_2013 --gsi_stage 2 --sensor mws /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout_2013
+
 # 1997 stream
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2 --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout
 mpiexec python -m score_plotting.core_scripts.plot_gsi_radiance_fit_to_obs_scout_v2 --gsi_stage 2 --sensor viirs-m /media/darr/results/figures/brightness_temperature_error_timeseries_weakly_coupled_scout
