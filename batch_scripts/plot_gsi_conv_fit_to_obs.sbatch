@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --nodes=1                      # Number of nodes (adjust based on your requirements)
 #SBATCH --time=12:00:00                # Max wall time (adjust as needed)
-#SBATCH --partition=bigmem #batch              # Partition to use
+#SBATCH --partition=medmem #batch              # Partition to use
 #SBATCH --mail-type=ALL                # Send an email when the job starts, ends, or fails
 #SBATCH --mail-user=Adam.Schneider@noaa.gov  # Email address for notifications
 
@@ -29,6 +29,9 @@ mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_
 
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_1997 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_1997 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997
+
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
 
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2023 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2023
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2023 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2023
