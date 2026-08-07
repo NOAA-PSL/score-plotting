@@ -36,8 +36,9 @@ def config():
                          'style_lib'),
         'config_file': [mpl_style_sheet],
         'output_path': args.figure_output_path,
-        'experiment_list': ['3dvar_coupledreanl_scoutrun_1979streamv1_test1',
-                            '3dvar_coupledreanl_scoutrun_v1_test1'
+        'experiment_list': [
+            'replay_observer_diagnostic_v1.1',
+            '3dvar_coupledreanl_scoutrun_v2',
                          ],
         
         'experiment_plot_dict': {
@@ -50,12 +51,35 @@ def config():
                 'color' : '#8D7334',
                 'ls': '-',
                 'lw': 0.75 
-            }
+            },
+        'replay_observer_diagnostic_v1.1' : {
+            'color' : '#29cfed',#'#0A3758',
+            'color2': '#29cfed',
+            'marker': '+',
+            'ls': '-',
+            'lw': 0.5,
+            'ls2': '-.',
+            'zorder':2
+            },
+        '3dvar_coupledreanl_scoutrun_v2' : {
+            'color' : '#9b8d62',
+            'color2': '#9b8d62',
+            'marker': '+',
+            'ls': '-',
+            'lw': 0.5,
+            'ls2': '--',
+            'zorder':2
+            },
         },
-        'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],
-        'variable_list': ['waterTemperature'],
+        'region':'global',
+        #'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],
+        'sensor_list': ['avhrr', 'viirs', 'amsr2', 'ssmis'],
+        'variable_list': ['seaSurfaceTemperature', 'seaIceFraction'],
+        'units': {'seaSurfaceTemperature': r'$^{\circ}$C',
+                  'seaIceFraction': 'unitless'},
+        #'variable_list': ['waterTemperature'],
         'start_date': '1978-10-01 00:00:00',
-        'stop_date': '2025-09-30 23:59:59',
+        'stop_date': '2026-09-30 23:59:59',
     }
     
     '''
@@ -64,10 +88,15 @@ def config():
     '''
     friendly_names_dict={"3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
                          '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
+                         '3dvar_coupledreanl_scoutrun_v2': 'scout-2',
                          "osd": "ocean station data (OSD)",
                          "xbt": "expendable bathythermograph (XBT)",
                          "ctd": "conductivity-temperature-depth (CTD)",
-                         "mbt": "mechanical bathythermograph (MBT)"}
+                         "mbt": "mechanical bathythermograph (MBT)",
+                         "avhrr": "Advanced Very-High Resolution Radiometer",
+                         "viirs": "Visible Infrared Imaging Radiometer Suite",
+                         "amsr2": "Advanced Microwave Scanning Radiometer 2",
+                         "ssmis": "Special Sensor Microwave Imager/Sounder"}
                          
     return(config_dict, friendly_names_dict)
     
@@ -97,12 +126,13 @@ def parse_arguments():
                         help='SOCA analysis iteration (1==ombg, 2==oman)')
                         
     # Add DA cycle as an argument (optional, default to 6.0)
-    parser.add_argument('--da_cycle', type=float, default=6.,
+    parser.add_argument('--da_cycle', type=float, default=24.,
                         help='The DA cycle duration in hours (default: 6.0)')
     
     # Add days to smooth as an argument (optional, default to 8.0)
     parser.add_argument('--days_to_smooth', type=float, default=8.,
                         help='Number of days to smooth (default: 8.0)')
+    parser.add_argument('--qc_threshold', type=int, default=0)
                         
     parser.add_argument(
         '--dark_theme', 
@@ -115,8 +145,9 @@ def parse_arguments():
     return args
 
 def get_data_frame(experiment_list, sensor_list, variable_list,
-                   start_date='1978-10-01 00:00:00',
-                   stop_date='2025-09-30 23:59:59',
+                   start_date='1978-10-01 12:00:00',
+                   stop_date='2025-09-30 12:00:00',
+                   region='global',
                    soca_it=1):
         
     soca_it = int(soca_it)
@@ -138,7 +169,8 @@ def get_data_frame(experiment_list, sensor_list, variable_list,
                                                 experiment_list,
                                                 metric_list,
                                                 start_date=start_date,
-                                                stop_date=stop_date)
+                                                stop_date=stop_date,
+                                                region=region)
 
 class SOCADiagsFit2ObsFig(object):
     """
@@ -152,6 +184,7 @@ class SOCADiagsFit2ObsFig(object):
         self.experiment_list = self.config_dict['experiment_list']
         self.sensor_list = self.config_dict['sensor_list']
         self.variable_list = self.config_dict['variable_list']
+        self.region = self.config_dict['region']
                 
         if input_data_frame:
             self.data_frame = data_frame
@@ -159,6 +192,7 @@ class SOCADiagsFit2ObsFig(object):
             self.data_frame = get_data_frame(self.experiment_list,
                                              self.config_dict['start_date'],
                                              self.config_dict['stop_date'],
+                                             region=self.region,
                                              soca_it=self.soca_it)
     
     def config_figure_params(self, days_to_smooth=1.):
@@ -207,11 +241,12 @@ class SOCADiagsFit2ObsFig(object):
     def build_timeseries(self, interactive_figure=False, ncols=3,
                          da_cycle = 6., # hours
                          days_to_smooth = 1., # days
-                         dark_theme=False):
+                         dark_theme=False,
+                         qc_threshold=0):
         self.dark_theme = dark_theme
         self.da_cycle = da_cycle
         self.config_figure_params(days_to_smooth=days_to_smooth)
-        figsize_width = 2 * 3.74 * ncols
+        figsize_width = 4.5 * ncols
         
         #TODO: need to change figsize_length so that it only counts sensors
         # 
@@ -219,10 +254,10 @@ class SOCADiagsFit2ObsFig(object):
         
         
         output_dir = self.config_dict['output_path']
-        locator = mdates.AutoDateLocator(minticks=8, maxticks=16)
+        locator = mdates.AutoDateLocator(minticks=8, maxticks=10)
         formatter = mdates.ConciseDateFormatter(locator)
         
-        month_locator = mdates.MonthLocator(interval=1)
+        month_locator = mdates.MonthLocator(interval=3)
         
         # Check if the directory exists, and create it if it doesn't
         if not os.path.exists(output_dir):
@@ -245,6 +280,7 @@ class SOCADiagsFit2ObsFig(object):
             axes_row = 0
             for sensor in sorted(self.sensor_list):
                 self.max_yerr=0.
+                
                 if sensor in self.config_dict['sensor_list'] and variable in self.config_dict['variable_list']:
                     experiment_timeseries_datetime_init=None
                     metric_list = [f'mean_{variable}_{sensor}_{self.group}',
@@ -271,7 +307,7 @@ class SOCADiagsFit2ObsFig(object):
                                 experiment_timeseries_datetime_init = self.experiment_timeseries_dict[
                                     experiment][metric].init_datetime
                                 
-                                self.experiment_timeseries_dict[experiment][metric].build()
+                                self.experiment_timeseries_dict[experiment][metric].build(qc_threshold=qc_threshold)
                                 
                             except KeyError: # remove metric from dict if no records returned                
                                 self.experiment_timeseries_dict[experiment].pop(metric, None)
@@ -281,14 +317,15 @@ class SOCADiagsFit2ObsFig(object):
                     self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
                     
                     # subplot titles
-                    self.axes[axes_row, 0].set_title(self.friendly_names_dict[sensor])
-                    self.axes[axes_row, 1].set_title(self.friendly_names_dict[sensor])
-                    self.axes[axes_row, 2].set_title(self.friendly_names_dict[sensor])
+                    self.axes[axes_row, 0].set_title(f'Bias: {self.friendly_names_dict[sensor]}')
+                    self.axes[axes_row, 1].set_title(f'RMSE: {self.friendly_names_dict[sensor]}')
+                    self.axes[axes_row, 2].set_title(f'N obs: {self.friendly_names_dict[sensor]}')
         
                     # vertical axes labels
-                    self.axes[axes_row, 0].set_ylabel(f'{variable}'+ r' mean error ($^{\circ}$C)')
-                    self.axes[axes_row, 1].set_ylabel(f'{variable}' + r' RMS error ($^{\circ}$C)')
-                    self.axes[axes_row, 2].set_ylabel('Number of observations used')
+                    units = self.config_dict['units'][variable]
+                    self.axes[axes_row, 0].set_ylabel(f'{variable} mean error ({units})')
+                    self.axes[axes_row, 1].set_ylabel(f'{variable} RMS error ({units})')
+                    self.axes[axes_row, 2].set_ylabel('Number of obs used')
 
                     if self.dark_theme:
                         self.axes[axes_row, 0].axhline(color='#A2A4A3', lw=0.5)
@@ -360,9 +397,9 @@ class SOCADiagsFit2ObsFig(object):
                 '''            
         
             if self.soca_it == 1:
-                title_str0 = f"GDAS ocean background fit to observations (O-B) [metrics downloaded from {self.db_name}"
+                title_str0 = f"GDAS {self.region} background fit to observations (O-B) [metrics downloaded from {self.db_name}"
             elif self.soca_it >= 2:
-                title_str0 = f"GDAS ocean analysis fit to observations (O-A) [metrics downloaded from {self.db_name}"
+                title_str0 = f"GDAS {self.region} analysis fit to observations (O-A) [metrics downloaded from {self.db_name}"
             
             if experiment_timeseries_datetime_init:
                 init_ctime = experiment_timeseries_datetime_init.ctime()
@@ -373,13 +410,22 @@ class SOCADiagsFit2ObsFig(object):
             self.fig.suptitle(f"{title_str0}{title_str1}")
             plt.tight_layout()
             plt.subplots_adjust(top = 1. - 1.2 / figsize_length)
-            if interactive_figure:
-                plt.show()
-            else:
+
+            if self.region=='global':
                 if self.soca_it ==1:
                     fig_title=f'gdas_ocean_{variable}_omb.png'
                 elif self.soca_it >=2:
                     fig_title=f'gdas_ocean_{variable}_oma.png'
+                    
+            else:
+                if self.soca_it ==1:
+                    fig_title=f'gdas_{self.region}_{variable}_omb.png'
+                elif self.soca_it >=2:
+                    fig_title=f'gdas_{self.region}_{variable}_oma.png'
+            
+            if interactive_figure:
+                plt.show()
+            else:
                 plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
             plt.close()
     
@@ -577,7 +623,7 @@ class SOCADiagsFit2ObsFig(object):
                             zorder=3
                         )       
 
-def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=None, stop_date=None):
+def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=None, stop_date=None, region=None):
     args = parse_arguments()
     soca_stage = args.soca_stage
     
@@ -605,6 +651,9 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
         sensor_list = list()
         for sensor in global_config_dict['sensor_list']:
             sensor_list.append(sensor)
+            
+    if region is None:
+        region = global_config_dict['region']
     
     if args.variable != 'all':
         variable_list = [args.variable]
@@ -620,6 +669,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
             experiment_list,
             sensor_list,
             variable_list,
+            region=region,
             start_date=start_date,
             stop_date=stop_date,
             soca_it=soca_stage)
@@ -671,20 +721,27 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                 input_data_frame=True,
                 soca_it=soca_stage
             )
-            experiment_metrics_timeseries_data.config_dict['variable_list'] = [var]
-            experiment_metrics_timeseries_data.config_dict['sensor_list'] = sensor_list
+            experiment_metrics_timeseries_data.variable_list = [var]
+            experiment_metrics_timeseries_data.sensor_list = sensor_list
             experiment_metrics_timeseries_data.experiment_list = experiment_list
+            experiment_metrics_timeseries_data.region = region
             experiment_metrics_timeseries_data.config_dict['start_date'] = start_date
             experiment_metrics_timeseries_data.config_dict['stop_date'] = stop_date
             experiment_metrics_timeseries_data.build_timeseries(interactive_figure=args.interactive,
                                                                 days_to_smooth=args.days_to_smooth,
                                                                 da_cycle=args.da_cycle,
-                                                                dark_theme=args.dark_theme)
+                                                                dark_theme=args.dark_theme,
+                                                                qc_threshold=args.qc_threshold)
 
 def main():
     """
     """
-    prun()
+    prun(sensor_list=['avhrr', 'viirs'],
+         variable_list=['seaSurfaceTemperature'])
+    prun(sensor_list=['amsr2', 'ssmis'],
+        variable_list=['seaIceFraction'],region='nh')
+    prun(sensor_list=['amsr2', 'ssmis'],
+        variable_list=['seaIceFraction'],region='sh')
 
 if __name__ == "__main__":
     main()

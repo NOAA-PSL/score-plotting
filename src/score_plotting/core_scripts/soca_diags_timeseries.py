@@ -2,6 +2,8 @@ from datetime import datetime
 
 from score_db import score_db_base
 
+import warnings
+
 def extract_unique_stats(strings):
     # Create sets to store unique values in the second and last positions
     first_position_set = set()
@@ -33,6 +35,7 @@ def extract_unique_stats(strings):
 
 def get_data_frame(experiment_list,
                    metric_list,
+                   region='global',
                    start_date='1979-01-01 00:00:00',
                    stop_date='2026-01-01 00:00:00'):
     """request from the score-db application experiment data
@@ -56,8 +59,8 @@ def get_data_frame(experiment_list,
                     },
                 },
                 'regions': {
-                    'rgs_name': {
-                        'exact': ['global']
+                    'name': {
+                        'exact': [region]
                     }
                 },
                 'time_valid': {
@@ -71,20 +74,24 @@ def get_data_frame(experiment_list,
 
     db_action_response = score_db_base.handle_request(request_dict)    
     data_frame = db_action_response.details['records']
-
+    
     # sort by timestamp, created at
     data_frame.sort_values(by=['expt_name',
                                'name',
+                               'region_name',
                                'time_valid',
+                               'usage',
                                'created_at'], 
                                inplace=True)
 
     # remove duplicate data
     data_frame.drop_duplicates(subset=['expt_name',
                                        'name',
-                                       'time_valid'], 
+                                       'region_name',
+                                       'time_valid',
+                                       'usage'], 
                                keep='last', inplace=True)
-                               
+    
     return data_frame
 
 class SOCADiagsTimeSeries(object):
@@ -117,7 +124,7 @@ class SOCADiagsTimeSeries(object):
                 start_date=start_date,
                 stop_date=stop_date)
         
-    def build(self):
+    def build(self, qc_threshold=0):
         self.unique_stat_list = extract_unique_stats(
                                             set(self.data_frame['name']))
         
@@ -136,12 +143,20 @@ class SOCADiagsTimeSeries(object):
                     self.value_dict[key][sensor_label] = list()        
         
         self.sensorlabel_dict = dict()
-        yval = 0
+        yval = 0            
+        
+        if qc_threshold is None:
+            usage_match = 'noqc'
+        elif qc_threshold == 0:
+            usage_match = 'effectiveQC_eq_0'
+        else:
+            usage_match = 'effectiveQC_lt_x'
         
         for row in self.data_frame.itertuples():
             metric_name_parts = row.name.split('_')
-
-            if metric_name_parts[2] == row.metric_instrument_name and row.expt_name == self.experiment_name:
+            if metric_name_parts[2] == row.metric_instrument_name and row.expt_name == self.experiment_name and row.usage == usage_match:
+                #TODO: add support for nonzero QC values
+                
                 stat_name = '_'.join(metric_name_parts[0:2])
                 soca_stage = metric_name_parts[-1]
                 
@@ -162,6 +177,9 @@ class SOCADiagsTimeSeries(object):
                     yval -= 1
         
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
+                
+            elif usage_match == 'effectiveQC_lt_x':
+                warning.warm('plotting not supported for nonzero QC thresholds')
         
     def print_init_time(self):
         print("SOCADiagsTimeSeries object init date and time: ",
