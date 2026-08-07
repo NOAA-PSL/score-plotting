@@ -9,7 +9,7 @@ from score_plotting.core_scripts import plot_gsi_radiance_fit_to_obs
 def main():
     plot_gsi_radiance_fit_to_obs.prun(
         start_date='1996-10-01 00:00:00',
-        stop_date='1999-03-01 23:59:59'
+        stop_date='1999-10-01 00:00:00'
     )
 
 if __name__=='__main__':
