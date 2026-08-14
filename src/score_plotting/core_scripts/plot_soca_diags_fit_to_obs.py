@@ -733,15 +733,21 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
                                                                 dark_theme=args.dark_theme,
                                                                 qc_threshold=args.qc_threshold)
 
-def main():
+def main(start_date=None, stop_date=None):
     """
     """
     prun(sensor_list=['avhrr', 'viirs'],
-         variable_list=['seaSurfaceTemperature'])
+         variable_list=['seaSurfaceTemperature'],
+         start_date=start_date,
+         stop_date=stop_date)
     prun(sensor_list=['amsr2', 'ssmis'],
-        variable_list=['seaIceFraction'],region='nh')
+        variable_list=['seaIceFraction'],region='nh',
+        start_date=start_date,
+        stop_date=stop_date)
     prun(sensor_list=['amsr2', 'ssmis'],
-        variable_list=['seaIceFraction'],region='sh')
+        variable_list=['seaIceFraction'],region='sh',
+        start_date=start_date,
+        stop_date=stop_date)
 
 if __name__ == "__main__":
     main()

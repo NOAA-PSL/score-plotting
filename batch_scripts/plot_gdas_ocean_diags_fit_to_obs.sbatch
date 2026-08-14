@@ -16,3 +16,18 @@ micromamba activate darr_score_sqlalchemy1_dev_env
 # Run the MPI Python script using mpiexec
 mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs /media/darr/results/figures/gdas_ocean_diags_error_timeseries
 
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2023 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2023
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2018 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2018
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2013 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2013
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2008 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2008
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2003 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2003
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_1997 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_1997
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_1993 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_1993
+
+mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_1988 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_1988
