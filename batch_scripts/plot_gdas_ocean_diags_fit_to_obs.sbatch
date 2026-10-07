@@ -16,6 +16,9 @@ micromamba activate darr_score_sqlalchemy1_dev_env
 # Run the MPI Python script using mpiexec
 mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs /media/darr/results/figures/gdas_ocean_diags_error_timeseries
 
+#temporary copy to deliver SST results to web
+cp /media/darr/results/figures/gdas_ocean_diags_error_timeseries/gdas_ocean_seaSurfaceTemperature_omb.png /media/darr/results/figures/gdas_ocean_diags_error_timeseries/gdas_ocean_waterTemperature_omb.png
+
 mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2023 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2023
 
 mpiexec python -m score_plotting.core_scripts.plot_soca_diags_fit_to_obs_2018 /media/darr/results/figures/gdas_ocean_diags_error_timeseries_2018

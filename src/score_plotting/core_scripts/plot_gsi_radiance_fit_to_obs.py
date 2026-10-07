@@ -47,7 +47,8 @@ def config():
                             'scout_run_v1',
                             '3dvar_coupledreanl_scoutrun_v1_test1',
                             '3dvar_coupledreanl_scoutrun_v2',
-                            '3dvar_coupledreanl_scoutrun_restart_v21'
+                            '3dvar_coupledreanl_scoutrun_restart_v21',
+                            '3dvar_coupledreanl_scoutrun_test3restart_v22',
                          ],
         
         'experiment_plot_dict': {
@@ -96,11 +97,16 @@ def config():
                 'color' : 'orange',
                 'ls': '-',
                 'lw': 0.5
-                }
+            },
+            '3dvar_coupledreanl_scoutrun_test3restart_v22' : {
+                'color' : 'orange',
+                'ls': '-',
+                'lw': 0.5
+            }
         },
         'sensor_list': get_instrument_channels().keys(),
         'start_date': '2022-10-01 00:00:00',
-        'stop_date': '2024-03-30 23:59:59',
+        'stop_date': '2025-10-01 00:00:00',
     }
     
     '''
@@ -115,6 +121,7 @@ def config():
                          "replay_observer_diagnostic_overlap": "UFS-replay-overlap",
                          "3dvar_coupledreanl_scoutrun_v1_test1": "scout-1",
                          '3dvar_coupledreanl_scoutrun_v2': "scout-2",
+                         '3dvar_coupledreanl_scoutrun_test3restart_v22': "scout-2t3r",
                          '3dvar_coupledreanl_scoutrun_restart_v21': "scout-2r",
                          "std_GSIstage_1": "STD",
                          "variance_GSIstage_1": "obs error variance",

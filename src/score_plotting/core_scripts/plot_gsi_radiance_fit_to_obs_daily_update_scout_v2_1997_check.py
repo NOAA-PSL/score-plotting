@@ -39,8 +39,8 @@ def main():
             'amrs2',
             'tmi'
         ],
-        start_date='2012-10-01 00:00:00',
-        stop_date='2015-10-01 00:00:00'
+        start_date='1997-11-15 00:00:00',
+        stop_date='1997-12-14 23:59:59'
     )
 
 if __name__=='__main__':

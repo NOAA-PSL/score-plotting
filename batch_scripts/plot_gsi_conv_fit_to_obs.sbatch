@@ -17,9 +17,9 @@ micromamba activate darr_score_sqlalchemy1_dev_env
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries
 
-cp /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/type_120_gdas_gsi_conv_asm_fit_t_data_omb.png /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/gdas_gsi_conv_asm_fit_t_data_omb.png
-cp /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/type_220_gdas_gsi_conv_asm_fit_uv_data_omb.png /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/gdas_gsi_conv_asm_fit_uv_data_omb.png
-cp /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/type_120_gdas_gsi_conv_asm_fit_q_data_omb.png /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/gdas_gsi_conv_asm_fit_q_data_omb.png
+#cp /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/type_120_gdas_gsi_conv_asm_fit_t_data_omb.png /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/gdas_gsi_conv_asm_fit_t_data_omb.png
+#cp /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/type_220_gdas_gsi_conv_asm_fit_uv_data_omb.png /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/gdas_gsi_conv_asm_fit_uv_data_omb.png
+#cp /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/type_120_gdas_gsi_conv_asm_fit_q_data_omb.png /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries/gdas_gsi_conv_asm_fit_q_data_omb.png
 
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_1988 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1988
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_1988 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1988
@@ -33,6 +33,12 @@ mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
 
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2003 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2003
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2003 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2003
+
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2008 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2008
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2008 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2008
+
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2013 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2013
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2013 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2013
 
@@ -41,3 +47,6 @@ mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_
 
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2023 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2023
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2023 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2023
+
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_rod /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_rod
+mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_rod --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_rod

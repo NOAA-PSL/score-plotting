@@ -8,7 +8,7 @@ from score_plotting.core_scripts import plot_gsi_conv_fit_to_obs_scout_v2
 
 def main():
     plot_gsi_conv_fit_to_obs_scout_v2.run(experiment_list = [
-            '3dvar_coupledreanl_scoutrun_restart_v21',
+            '3dvar_coupledreanl_scoutrun_test3restart_v22',
             '3dvar_coupledreanl_scoutrun_v2',
             #'replay_observer_diagnostic_v1.1',
             #'NASA_GEOSIT_GSISTATS',
@@ -19,7 +19,7 @@ def main():
             #'scout_run_v1',
             #'3dvar_coupledreanl_scoutrun_1979streamv1_test1',
         ],
-        start_date='1997-03-01 00:00:00', stop_date='1997-05-01 00:00:00')
+        start_date='1999-09-01 00:00:00', stop_date='1999-11-01 00:00:00')
 
 if __name__=='__main__':
     main()

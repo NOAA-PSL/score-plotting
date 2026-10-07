@@ -4,13 +4,10 @@
 generation for a subset of sensors for the replay overlap experiment
 """
 
-from score_plotting.core_scripts import plot_gsi_radiance_fit_to_obs
+from score_plotting.core_scripts import plot_gsi_conv_fit_to_obs_scout_v2
 
 def main():
-    plot_gsi_radiance_fit_to_obs.prun(
-        start_date='1996-10-01 00:00:00',
-        stop_date='2002-10-01 00:00:00'
-    )
+    plot_gsi_conv_fit_to_obs_scout_v2.run(start_date='2007-10-01 00:00:00', stop_date='2009-10-01 00:00:00')
 
 if __name__=='__main__':
     main()
