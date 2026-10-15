@@ -51,7 +51,8 @@ def config():
             '3dvar_coupledreanl_scoutrun_v1_test1',
             '3dvar_coupledreanl_scoutrun_v2',
             '3dvar_coupledreanl_scoutrun_restart_v21',
-            '3dvar_coupledreanl_scoutrun_test3restart_v22'
+            '3dvar_coupledreanl_scoutrun_test3restart_v22',
+            '3dvar_coupledreanl_scoutrun_sfs',
                          ],
         
         'experiment_plot_dict': {
@@ -129,7 +130,16 @@ def config():
                 'lw': 0.5,
                 'ls2': '--',
                 'zorder':3
-            }
+            },
+            '3dvar_coupledreanl_scoutrun_sfs' : {
+                'color' : 'orange',
+                'color2': '#9b8d62',
+                'marker': '+',
+                'ls': '-',
+                'lw': 0.5,
+                'ls2': '--',
+                'zorder':3
+            },
         },
         'sensor_list': [111, 112, 120, 122, 126, 130, 131, 132, 133, 134, 135,
                         150, 151, 152, 153, 154, 156, 157, 158, 159, 164, 165,
@@ -165,7 +175,8 @@ def config():
             '3dvar_coupledreanl_scoutrun_v2': "scout-2",
             'cfsr':"CFSR",
             '3dvar_coupledreanl_scoutrun_restart_v21':"scout-2r",
-            '3dvar_coupledreanl_scoutrun_test3restart_v22' :"scout-2t3r"
+            '3dvar_coupledreanl_scoutrun_test3restart_v22' :"scout-2t3r",
+            '3dvar_coupledreanl_scoutrun_sfs': "SFS-test"
                          }
                          
     return(config_dict, friendly_names_dict)

@@ -39,6 +39,7 @@ def config():
         'experiment_list': [
             'replay_observer_diagnostic_v1.1',
             '3dvar_coupledreanl_scoutrun_v2',
+            '3dvar_coupledreanl_scoutrun_sfs',
                          ],
         
         'experiment_plot_dict': {
@@ -70,6 +71,15 @@ def config():
             'ls2': '--',
             'zorder':2
             },
+        '3dvar_coupledreanl_scoutrun_sfs' : {
+            'color' : 'orange',
+            'color2': '#9b8d62',
+            'marker': '+',
+            'ls': '-',
+            'lw': 0.5,
+            'ls2': '--',
+            'zorder':3
+            },
         },
         'region':'global',
         #'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],
@@ -96,7 +106,8 @@ def config():
                          "avhrr": "Advanced Very-High Resolution Radiometer",
                          "viirs": "Visible Infrared Imaging Radiometer Suite",
                          "amsr2": "Advanced Microwave Scanning Radiometer 2",
-                         "ssmis": "Special Sensor Microwave Imager/Sounder"}
+                         "ssmis": "Special Sensor Microwave Imager/Sounder",
+                         "3dvar_coupledreanl_scoutrun_sfs": 'SFS-test'}
                          
     return(config_dict, friendly_names_dict)
     
