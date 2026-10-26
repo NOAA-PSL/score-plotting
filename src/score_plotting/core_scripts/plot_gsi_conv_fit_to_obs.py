@@ -158,12 +158,6 @@ def config():
             #'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
         'color_limits': {
-            'fit_psfc_data': {
-                'bias': 2.0,
-                'rms': 6.0,
-                'bias_diff': 1.0,
-                'rms_diff': 2.0,
-            },
             'fit_uv_data': {
                 'bias': 5.0,
                 'rms': 6.0,
