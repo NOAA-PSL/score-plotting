@@ -153,9 +153,9 @@ def config():
                     ]  ,
         'variable_list': [
             'fit_psfc_data', # fit of surface pressure data (hPa)
-            'fit_uv_data', # fit of u, v wind data (m/s)
-            'fit_t_data', # fit of temperature data (K)
-            'fit_q_data', # fit of moisture data (% of qsaturation guess)
+            #'fit_uv_data', # fit of u, v wind data (m/s)
+            #'fit_t_data', # fit of temperature data (K)
+            #'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
         'color_limits': {
             'fit_psfc_data': {
