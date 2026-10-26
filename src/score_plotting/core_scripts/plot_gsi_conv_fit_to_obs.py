@@ -153,7 +153,7 @@ def config():
                     ]  ,
         'variable_list': [
             'fit_psfc_data', # fit of surface pressure data (hPa)
-            #'fit_uv_data', # fit of u, v wind data (m/s)
+            'fit_uv_data', # fit of u, v wind data (m/s)
             'fit_t_data', # fit of temperature data (K)
             'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
@@ -163,6 +163,12 @@ def config():
                 'rms': 6.0,
                 'bias_diff': 1.0,
                 'rms_diff': 2.0,
+            },
+            'fit_uv_data': {
+                'bias': 5.0,
+                'rms': 6.0,
+                'bias_diff': 2.5,
+                'rms_diff': 3.0,
             },
             'fit_t_data': {
                 'bias': 1.5,
