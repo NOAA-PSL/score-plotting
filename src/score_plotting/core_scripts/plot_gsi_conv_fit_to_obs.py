@@ -157,6 +157,26 @@ def config():
             #'fit_t_data', # fit of temperature data (K)
             #'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
+        'color_limits': {
+            'fit_uv_data': {
+                'bias': 2.0,
+                'rms': 10.0,
+                'bias_diff': 2.0,
+                'rms_diff': 5.0,
+            },
+            'fit_t_data': {
+                'bias': 1.25,
+                'rms': 2.5,
+                'bias_diff': 1.25,
+                'rms_diff': 1.25,
+            },
+            'fit_q_data': {
+                'bias': 5.0,
+                'rms': 25.0,
+                'bias_diff': 5.0,
+                'rms_diff': 5.0,
+            },
+        },
         'start_date': '1996-10-01 00:00:00',
         'stop_date': '2026-09-30 23:59:59',
     }
@@ -778,6 +798,7 @@ class GSIConvFit2ObsFig(object):
                      do_seasons=False):
         
         exp_comp_dict = dict()
+        var_limits = self.config_dict.get('color_limits', {}).get(variable, {})
         experiment_idx = 0
         if metric_unit == 'percent of qsaturation guess':
             metric_unit = '%'
@@ -847,7 +868,9 @@ class GSIConvFit2ObsFig(object):
                         
                     if self.array and not do_seasons:
                         exp_comp_dict[experiment_idx][metric][sensor]={'expname':experiment,'values':bias_timeseries}
-                        vmax = np.nanquantile(np.abs(mean_values_smooth.values), 0.97725)
+                        vmax = var_limits.get('bias')
+                        if vmax is None:
+                            vmax = np.nanquantile(np.abs(mean_values_smooth.values), 0.97725)
                         if vmax > self.seasonal_bias_xmax and experiment_idx == 0:
                             self.seasonal_bias_xmax = vmax
                         pcmesh = self.axes[axes_row + experiment_idx + pos*iterator, 0].pcolormesh(
@@ -883,7 +906,9 @@ class GSIConvFit2ObsFig(object):
                                 center=True
                             ).mean()
                             label_to_show = f'{self.friendly_names_dict[exp_comp_dict[experiment_idx-1][metric][sensor]["expname"]]} - {self.friendly_names_dict[exp_comp_dict[experiment_idx][metric][sensor]["expname"]]}'
-                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
+                            vmax = var_limits.get('bias_diff')
+                            if vmax is None:
+                                vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
                             pcmesh = self.axes[axes_row+ 1 + experiment_idx+ pos*iterator, 0].pcolormesh(
                                 self.time_domain_bnds.index,
                                 plevs_bnds,
@@ -986,7 +1011,11 @@ class GSIConvFit2ObsFig(object):
                     
                     if self.array and not do_seasons:
                         exp_comp_dict[experiment_idx][metric][sensor] = {'expname':experiment,'values':rmse_timeseries}
-                        vmax = np.nanquantile(np.abs(rmse_values_smooth.values), 0.97725)
+                        vmax = var_limits.get('rms')
+                        if vmax is None:
+                            vmax = np.nanquantile(np.abs(rmse_values_smooth.values), 0.97725)
+                        else:
+                            self.seasonal_rms_xmax = vmax
                         if vmax > self.seasonal_rms_xmax and experiment_idx == 0:
                             self.seasonal_rms_xmax = vmax
                         pcmesh = self.axes[axes_row + experiment_idx + pos*iterator, 0].pcolormesh(
@@ -1024,7 +1053,9 @@ class GSIConvFit2ObsFig(object):
                                 center=True,
                             ).mean()
                             label_to_show = f'{self.friendly_names_dict[exp_comp_dict[experiment_idx-1][metric][sensor]["expname"]]} - {self.friendly_names_dict[exp_comp_dict[experiment_idx][metric][sensor]["expname"]]}'
-                            vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
+                            vmax = var_limits.get('rms_diff')
+                            if vmax is None:
+                                vmax = np.nanquantile(np.abs(values_to_plot.values), 0.97725)
                             pcmesh = self.axes[axes_row+ 1 + experiment_idx + pos*iterator, 0].pcolormesh(
                                 self.time_domain_bnds.index,
                                 plevs_bnds,
