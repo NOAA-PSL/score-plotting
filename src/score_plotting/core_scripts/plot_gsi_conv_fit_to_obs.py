@@ -1014,8 +1014,6 @@ class GSIConvFit2ObsFig(object):
                         vmax = var_limits.get('rms')
                         if vmax is None:
                             vmax = np.nanquantile(np.abs(rmse_values_smooth.values), 0.97725)
-                        else:
-                            self.seasonal_rms_xmax = vmax
                         if vmax > self.seasonal_rms_xmax and experiment_idx == 0:
                             self.seasonal_rms_xmax = vmax
                         pcmesh = self.axes[axes_row + experiment_idx + pos*iterator, 0].pcolormesh(
