@@ -30,8 +30,8 @@ mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_1997 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_1997 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997
 
-mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
-mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
+#mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
+#mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_restart_1997 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_1997_restart
 
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2003 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2003
 mpiexec python -m score_plotting.core_scripts.plot_gsi_conv_fit_to_obs_scout_v2_2003 --gsi_stage 2 /media/darr/results/figures/gdas_gsi_conv_fit2obs_error_timeseries_2003

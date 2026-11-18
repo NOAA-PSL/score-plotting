@@ -15,9 +15,9 @@ micromamba activate darr_score_sqlalchemy1_dev_env
 
 mv /media/darr/results/*.mpg /media/darr/results/movies/
 
-python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3pwv.mpg /media/darr/results/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install2/run*/work/*/fv3gfs_sfc_mapper/fv3pwv_*.png
-python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3nhsic.mpg /media/darr/results/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install2/run*/work/*/fv3gfs_sfc_mapper/fv3nhsic_*.png
-python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3shsic.mpg /media/darr/results/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install2/run*/work/*/fv3gfs_sfc_mapper/fv3shsic_*.png
-python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3nhsitk.mpg /media/darr/results/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install2/run*/work/*/fv3gfs_sfc_mapper/fv3nhsitk_*.png
-python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3shsitk.mpg /media/darr/results/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install2/run*/work/*/fv3gfs_sfc_mapper/fv3shsitk_*.png
-python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/soca_sst.mpg /media/darr/results/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install2/run*/work/*/soca_diags_mapper/sst_*_sfc.png
+python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3pwv.mpg /media/f_input_reanal_prod_data/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install*/run*/work/*/fv3gfs_sfc_mapper/fv3pwv_*.png
+python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3nhsic.mpg /media/f_input_reanal_prod_data/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install*/run*/work/*/fv3gfs_sfc_mapper/fv3nhsic_*.png
+python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3shsic.mpg /media/f_input_reanal_prod_data/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install*/run*/work/*/fv3gfs_sfc_mapper/fv3shsic_*.png
+python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3nhsitk.mpg /media/f_input_reanal_prod_data/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install*/run*/work/*/fv3gfs_sfc_mapper/fv3nhsitk_*.png
+python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/fv3shsitk.mpg /media/f_input_reanal_prod_data/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install*/run*/work/*/fv3gfs_sfc_mapper/fv3shsitk_*.png
+python /media/darr/src/score-monitoring/scripts/make_movie.py -o=/media/darr/results/soca_sst.mpg /media/f_input_reanal_prod_data/cylc-run/score-monitoring/cylc_scout_v2/scout_*_install*/run*/work/*/soca_diags_mapper/sst_*_sfc.png
