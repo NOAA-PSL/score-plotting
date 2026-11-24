@@ -271,13 +271,6 @@ class SOCADiagsFit2ObsFig(object):
             self.group = 'oman'
         
         for variable in self.variable_list:
-            
-            # instantiate figure here    
-            self.fig, self.axes = plt.subplots(len(self.sensor_list), ncols, sharex=True,sharey=False,
-                                     squeeze=False,
-                                     figsize=(figsize_width, figsize_length))
-            
-            axes_row = 0
             for sensor in sorted(self.sensor_list):
                 self.max_yerr=0.
                 
@@ -313,6 +306,25 @@ class SOCADiagsFit2ObsFig(object):
                                 self.experiment_timeseries_dict[experiment].pop(metric, None)
                                 warnings.warn(f'missing {sensor} {variable} records for '
                                               f'{experiment} experiment: {metric}')
+            ### here and below
+            axes_row = 0
+            nrows = 0
+            sat_set = set()
+            
+            for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
+                for full_stat_name, timeseries_data in timeseries_dict.items():
+                    for stat_label, value_dict in timeseries_data.value_dict.items():
+                        for sat_sensor in value_dict.keys():
+                           sat_set.add(sat_sensor)
+            
+            # instantiate figure here    
+            self.fig, self.axes = plt.subplots(len(self.sensor_list), ncols, sharex=True,sharey=False,
+                                     squeeze=False,
+                                     figsize=(figsize_width, figsize_length))
+                                     
+            #### here and below           
+            for sensor in sorted(self.sensor_list):
+            
                 
                     self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
                     
