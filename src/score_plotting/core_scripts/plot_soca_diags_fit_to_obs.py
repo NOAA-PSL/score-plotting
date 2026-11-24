@@ -90,6 +90,7 @@ def config():
     friendly_names_dict={"3dvar_coupledreanl_scoutrun_1979streamv1_test1": "weakly coupled 1979stream (3DVar)",
                          '3dvar_coupledreanl_scoutrun_v1_test1': "weakly coupled scout (3DVar)",
                          '3dvar_coupledreanl_scoutrun_v2': 'scout-2',
+                         "replay_observer_diagnostic_v1.1": "Replay",
                          "osd": "ocean station data (OSD)",
                          "xbt": "expendable bathythermograph (XBT)",
                          "ctd": "conductivity-temperature-depth (CTD)",

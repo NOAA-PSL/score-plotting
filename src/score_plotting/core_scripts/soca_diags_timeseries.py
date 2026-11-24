@@ -164,7 +164,7 @@ class SOCADiagsTimeSeries(object):
         yval = 0            
         
         if qc_threshold is None:
-            usage_match = 'noqc'
+            usage_match = 'noQC'
         elif qc_threshold == 0:
             usage_match = 'effectiveQC_eq_0'
         else:
@@ -199,7 +199,7 @@ class SOCADiagsTimeSeries(object):
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
                 
             elif usage_match == 'effectiveQC_lt_x':
-                warning.warm('plotting not supported for nonzero QC thresholds')
+                warnings.warn('plotting not supported for nonzero QC thresholds')
         
     def print_init_time(self):
         print("SOCADiagsTimeSeries object init date and time: ",
