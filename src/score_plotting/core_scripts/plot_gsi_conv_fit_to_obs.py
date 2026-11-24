@@ -52,7 +52,7 @@ def config():
             '3dvar_coupledreanl_scoutrun_v2',
             '3dvar_coupledreanl_scoutrun_restart_v21',
             '3dvar_coupledreanl_scoutrun_test3restart_v22',
-            '3dvar_coupledreanl_scoutrun_sfs',
+            '3dvar_coupledreanl_scoutrun_sfsv3',
                          ],
         
         'experiment_plot_dict': {
@@ -131,7 +131,7 @@ def config():
                 'ls2': '--',
                 'zorder':3
             },
-            '3dvar_coupledreanl_scoutrun_sfs' : {
+            '3dvar_coupledreanl_scoutrun_sfsv3' : {
                 'color' : 'orange',
                 'color2': '#9b8d62',
                 'marker': '+',
@@ -196,7 +196,7 @@ def config():
             'cfsr':"CFSR",
             '3dvar_coupledreanl_scoutrun_restart_v21':"scout-2r",
             '3dvar_coupledreanl_scoutrun_test3restart_v22' :"scout-2t3r",
-            '3dvar_coupledreanl_scoutrun_sfs': "SFS-test"
+            '3dvar_coupledreanl_scoutrun_sfsv3': "SFSv0.3"
                          }
                          
     return(config_dict, friendly_names_dict)

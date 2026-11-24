@@ -49,7 +49,7 @@ def config():
                             '3dvar_coupledreanl_scoutrun_v2',
                             '3dvar_coupledreanl_scoutrun_restart_v21',
                             '3dvar_coupledreanl_scoutrun_test3restart_v22',
-                            '3dvar_coupledreanl_scoutrun_sfs',
+                            '3dvar_coupledreanl_scoutrun_sfsv3',
                          ],
         
         'experiment_plot_dict': {
@@ -104,7 +104,7 @@ def config():
                 'ls': '-',
                 'lw': 0.5
             },
-            '3dvar_coupledreanl_scoutrun_sfs' : {
+            '3dvar_coupledreanl_scoutrun_sfsv3' : {
                 'color' : 'orange',
                 'ls': '-',
                 'lw': 0.5
@@ -133,7 +133,7 @@ def config():
                          "variance_GSIstage_1": "obs error variance",
                          "bias_post_corr_GSIstage_1": "ME",
                          "sqrt_bias_GSIstage_1": "RMSE",
-                         "3dvar_coupledreanl_scoutrun_sfs": "SFS-test"}
+                         "3dvar_coupledreanl_scoutrun_sfsv3": "SFSv0.3"}
                          
     return(config_dict, friendly_names_dict)
     
