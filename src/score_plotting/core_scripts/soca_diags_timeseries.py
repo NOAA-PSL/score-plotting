@@ -29,12 +29,12 @@ def extract_unique_stats(strings, satnames=set(), levels=set()):
     last_position_list = sorted(list(last_position_set))
     
     if len(satnames) > 0:
-        satname_list = sorted(list(satnames))
+        satname_list = sorted(list(satnames), key=str)
     else:
         satname_list = [None]
         
     if len(levels) > 0:
-        level_list = sorted(list(levels))
+        level_list = sorted(list(levels), key=str)
     else:
         level_list = [None]
     
@@ -84,9 +84,6 @@ def get_data_frame(experiment_list,
 
     db_action_response = score_db_base.handle_request(request_dict)    
     data_frame = db_action_response.details['records']
-    
-    import ipdb
-    ipdb.set_trace()
     
     # sort by timestamp, created at
     data_frame.sort_values(by=['expt_name',
@@ -144,7 +141,7 @@ class SOCADiagsTimeSeries(object):
     def build(self, qc_threshold=0):
         self.unique_stat_list = extract_unique_stats(
                                             set(self.data_frame['name']),
-                                            satnames=set(self.data_frame['sat_name']),
+                                            satnames=set(self.data_frame['sat_short_name']),
                                             levels=set(self.data_frame['level']))
         
         self.timestamp_dict = dict()
@@ -180,7 +177,7 @@ class SOCADiagsTimeSeries(object):
                 
                 stat_name = '_'.join(metric_name_parts[0:2])
                 soca_stage = metric_name_parts[-1]
-                satname = row.sat_name
+                satname = row.sat_short_name
                 level = row.level
                 
                 stat_label = f'{stat_name}_{satname}_{level}_{soca_stage}'

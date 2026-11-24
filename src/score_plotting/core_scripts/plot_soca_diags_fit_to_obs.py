@@ -16,6 +16,7 @@ import pandas as pd
 from mpi4py import MPI
 
 from score_plotting.core_scripts import soca_diags_timeseries
+from score_plotting.core_scripts import satellite_names
 
 HOURS_PER_DAY = 24. # hours
 
@@ -248,11 +249,6 @@ class SOCADiagsFit2ObsFig(object):
         self.config_figure_params(days_to_smooth=days_to_smooth)
         figsize_width = 4.5 * ncols
         
-        #TODO: need to change figsize_length so that it only counts sensors
-        # 
-        figsize_length = 4.53 * len(self.sensor_list)
-        
-        
         output_dir = self.config_dict['output_path']
         locator = mdates.AutoDateLocator(minticks=8, maxticks=10)
         formatter = mdates.ConciseDateFormatter(locator)
@@ -271,6 +267,7 @@ class SOCADiagsFit2ObsFig(object):
             self.group = 'oman'
         
         for variable in self.variable_list:
+            row_list = list() # one figure row per (sensor, satellite, level)
             for sensor in sorted(self.sensor_list):
                 self.max_yerr=0.
                 
@@ -306,32 +303,31 @@ class SOCADiagsFit2ObsFig(object):
                                 self.experiment_timeseries_dict[experiment].pop(metric, None)
                                 warnings.warn(f'missing {sensor} {variable} records for '
                                               f'{experiment} experiment: {metric}')
-            ### here and below
-            axes_row = 0
-            nrows = 0
-            sat_set = set()
+                    
+                    # one row per satellite and level (one empty row if the sensor has no records)
+                    sensor_df = self.data_frame[self.data_frame['name'].isin(metric_list)]
+                    for sat_short_name, level in sorted(set(zip(sensor_df['sat_short_name'], sensor_df['level'])), key=str) or [(None, None)]:
+                        row_list.append((sensor, sat_short_name, level, self.experiment_timeseries_dict))
             
-            for experiment, timeseries_dict in self.experiment_timeseries_dict.items():
-                for full_stat_name, timeseries_data in timeseries_dict.items():
-                    for stat_label, value_dict in timeseries_data.value_dict.items():
-                        for sat_sensor in value_dict.keys():
-                           sat_set.add(sat_sensor)
+            axes_row = 0
+            figsize_length = 4.53 * len(row_list)
             
             # instantiate figure here    
-            self.fig, self.axes = plt.subplots(len(self.sensor_list), ncols, sharex=True,sharey=False,
+            self.fig, self.axes = plt.subplots(len(row_list), ncols, sharex=True,sharey=False,
                                      squeeze=False,
                                      figsize=(figsize_width, figsize_length))
                                      
-            #### here and below           
-            for sensor in sorted(self.sensor_list):
-            
-                
+            for sensor, sat_short_name, level, experiment_timeseries_dict in row_list:
+                    self.experiment_timeseries_dict = experiment_timeseries_dict
+                    sat_level = ' '.join(str(x) for x in (satellite_names.get_longname(sat_short_name), level) if pd.notna(x))
+                    row_title = f'{self.friendly_names_dict[sensor]}\n{sat_level}'
+                    
                     self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
                     
                     # subplot titles
-                    self.axes[axes_row, 0].set_title(f'Bias: {self.friendly_names_dict[sensor]}')
-                    self.axes[axes_row, 1].set_title(f'RMSE: {self.friendly_names_dict[sensor]}')
-                    self.axes[axes_row, 2].set_title(f'N obs: {self.friendly_names_dict[sensor]}')
+                    self.axes[axes_row, 0].set_title(f'Bias: {row_title}')
+                    self.axes[axes_row, 1].set_title(f'RMSE: {row_title}')
+                    self.axes[axes_row, 2].set_title(f'N obs: {row_title}')
         
                     # vertical axes labels
                     units = self.config_dict['units'][variable]
@@ -356,7 +352,7 @@ class SOCADiagsFit2ObsFig(object):
                     self.axes[axes_row, 2].tick_params(axis='x', which='both', top=True, bottom=True,
                                              labelbottom=True)
                     
-                    self.plot_data(axes_row, variable, sensor)
+                    self.plot_data(axes_row, variable, sensor, f'{sat_short_name}_{level}')
                     
                     for col_idx in range(ncols):
                         if self.dark_theme:
@@ -441,7 +437,7 @@ class SOCADiagsFit2ObsFig(object):
                 plt.savefig(os.path.join(output_dir, fig_title), dpi=300)
             plt.close()
     
-    def plot_data(self, axes_row, variable, sensor,
+    def plot_data(self, axes_row, variable, sensor, sat_level,
                      alpha_foreground=0.9,
                      alpha_background=0.5,):    
         
@@ -450,7 +446,7 @@ class SOCADiagsFit2ObsFig(object):
             for full_stat_name, timeseries_data in timeseries_dict.items():
                 for stat_label, value_dict in timeseries_data.value_dict.items():
                     
-                    if stat_label == f'mean_{variable}_{self.group}' and sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                    if stat_label == f'mean_{variable}_{sat_level}_{self.group}' and value_dict.get(sensor):
                         """ mean error plot
                         """
                         bias_timeseries = pd.Series(
@@ -463,19 +459,19 @@ class SOCADiagsFit2ObsFig(object):
                         std_timeseries = pd.Series(
                             data=np.array(
                                 timeseries_dict[f'StdDev_{variable}_{sensor}_{self.group}'].value_dict[
-                                    f'StdDev_{variable}_{self.group}'][sensor]
+                                    f'StdDev_{variable}_{sat_level}_{self.group}'][sensor]
                             ),
                             index=timeseries_dict[f'StdDev_{variable}_{sensor}_{self.group}'].timestamp_dict[
-                                f'StdDev_{variable}_{self.group}'][sensor]
+                                f'StdDev_{variable}_{sat_level}_{self.group}'][sensor]
                         ).astype(float)
                         
                         nobs_used_timeseries = pd.Series(
                             data=np.array(
                                 timeseries_dict[f'count_{variable}_{sensor}_{self.group}'].value_dict[
-                                    f'count_{variable}_{self.group}'][sensor]
+                                    f'count_{variable}_{sat_level}_{self.group}'][sensor]
                             ),
                             index=timeseries_dict[f'count_{variable}_{sensor}_{self.group}'].timestamp_dict[
-                                f'count_{variable}_{self.group}'][sensor]
+                                f'count_{variable}_{sat_level}_{self.group}'][sensor]
                         ).astype(float)
 
                         standard_errs = std_timeseries / np.sqrt(nobs_used_timeseries)
@@ -527,7 +523,7 @@ class SOCADiagsFit2ObsFig(object):
 
                         self.axes[axes_row,0].legend(loc='upper right')
                 
-                    elif stat_label == f'rms_{variable}_{self.group}' and sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                    elif stat_label == f'rms_{variable}_{sat_level}_{self.group}' and value_dict.get(sensor):
                         """RMS error plot
                         """
                         rmse_timeseries = pd.Series(
@@ -540,10 +536,10 @@ class SOCADiagsFit2ObsFig(object):
                         mean_obs_err_timeseries = pd.Series(
                             data=np.array(
                                 timeseries_dict[f'mean_{variable}_{sensor}_ObsError'].value_dict[
-                                    f'mean_{variable}_ObsError'][sensor]
+                                    f'mean_{variable}_{sat_level}_ObsError'][sensor]
                             ),
                             index=timeseries_dict[f'mean_{variable}_{sensor}_ObsError'].timestamp_dict[
-                                f'mean_{variable}_ObsError'][sensor]
+                                f'mean_{variable}_{sat_level}_ObsError'][sensor]
                         ).astype(float)
 
                         self.max_yerr = np.max(
@@ -589,7 +585,7 @@ class SOCADiagsFit2ObsFig(object):
                             zorder=3
                         )
                                         
-                    elif stat_label == f'count_{variable}_{self.group}' and sensor in timeseries_data.timestamp_dict[stat_label].keys():
+                    elif stat_label == f'count_{variable}_{sat_level}_{self.group}' and value_dict.get(sensor):
                         nobs_used_timeseries = pd.Series(
                             data=np.array(
                                 value_dict[sensor]
