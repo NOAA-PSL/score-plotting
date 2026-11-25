@@ -4,13 +4,13 @@ from score_db import score_db_base
 
 import warnings
 
-def extract_unique_stats(strings):
+def extract_unique_stats(strings, satnames=set(), levels=set()):
     # Create sets to store unique values in the second and last positions
     first_position_set = set()
     second_position_set = set()
     third_position_set = set()
     last_position_set = set()
-    
+        
     # Iterate over the set of strings
     for s in strings:
         parts = s.split('_')
@@ -28,8 +28,18 @@ def extract_unique_stats(strings):
     third_position_list = sorted(list(third_position_set))
     last_position_list = sorted(list(last_position_set))
     
+    if len(satnames) > 0:
+        satname_list = sorted(list(satnames), key=str)
+    else:
+        satname_list = [None]
+        
+    if len(levels) > 0:
+        level_list = sorted(list(levels), key=str)
+    else:
+        level_list = [None]
+    
     # Combine the two lists into a 2D array (list of lists)
-    unique_positions = [first_position_list, second_position_list, third_position_list, last_position_list]
+    unique_positions = [first_position_list, second_position_list, third_position_list, last_position_list, satname_list, level_list]
     
     return unique_positions
 
@@ -78,6 +88,8 @@ def get_data_frame(experiment_list,
     # sort by timestamp, created at
     data_frame.sort_values(by=['expt_name',
                                'name',
+                               'sat_short_name',
+                               'level',
                                'region_name',
                                'time_valid',
                                'usage',
@@ -87,6 +99,8 @@ def get_data_frame(experiment_list,
     # remove duplicate data
     data_frame.drop_duplicates(subset=['expt_name',
                                        'name',
+                                       'sat_short_name',
+                                       'level',
                                        'region_name',
                                        'time_valid',
                                        'usage'], 
@@ -126,27 +140,31 @@ class SOCADiagsTimeSeries(object):
         
     def build(self, qc_threshold=0):
         self.unique_stat_list = extract_unique_stats(
-                                            set(self.data_frame['name']))
+                                            set(self.data_frame['name']),
+                                            satnames=set(self.data_frame['sat_short_name']),
+                                            levels=set(self.data_frame['level']))
         
         self.timestamp_dict = dict()
         self.value_dict = dict()
         for i, stat_name in enumerate(self.unique_stat_list[0]):
             for j, var_name in enumerate(self.unique_stat_list[1]):
                 for k, soca_stage in enumerate(self.unique_stat_list[3]):
-                    self.timestamp_dict[f'{stat_name}_{var_name}_{soca_stage}'] = dict()
-                    self.value_dict[f'{stat_name}_{var_name}_{soca_stage}'] = dict()
+                    for l, satname in enumerate(self.unique_stat_list[4]):
+                        for m, level in enumerate(self.unique_stat_list[5]):
+                            self.timestamp_dict[f'{stat_name}_{var_name}_{satname}_{level}_{soca_stage}'] = dict()
+                            self.value_dict[f'{stat_name}_{var_name}_{satname}_{level}_{soca_stage}'] = dict()
                 
         for key in self.value_dict.keys():
             for instrument_name in set(self.data_frame.metric_instrument_name):
-                    sensor_label = f'{instrument_name}'
-                    self.timestamp_dict[key][sensor_label] = list()
-                    self.value_dict[key][sensor_label] = list()        
+                sensor_label = f'{instrument_name}'
+                self.timestamp_dict[key][sensor_label] = list()
+                self.value_dict[key][sensor_label] = list()        
         
         self.sensorlabel_dict = dict()
         yval = 0            
         
         if qc_threshold is None:
-            usage_match = 'noqc'
+            usage_match = 'noQC'
         elif qc_threshold == 0:
             usage_match = 'effectiveQC_eq_0'
         else:
@@ -159,8 +177,10 @@ class SOCADiagsTimeSeries(object):
                 
                 stat_name = '_'.join(metric_name_parts[0:2])
                 soca_stage = metric_name_parts[-1]
+                satname = row.sat_short_name
+                level = row.level
                 
-                stat_label = f'{stat_name}_{soca_stage}'
+                stat_label = f'{stat_name}_{satname}_{level}_{soca_stage}'
                 
                 sensor_label = f'{row.metric_instrument_name}'
                 timestamp = row.time_valid#.timestamp()
@@ -179,7 +199,7 @@ class SOCADiagsTimeSeries(object):
                 #print(gsi_stage, stat_name, sensor_label, self.sensorlabel_dict[sensor_label])
                 
             elif usage_match == 'effectiveQC_lt_x':
-                warning.warm('plotting not supported for nonzero QC thresholds')
+                warnings.warn('plotting not supported for nonzero QC thresholds')
         
     def print_init_time(self):
         print("SOCADiagsTimeSeries object init date and time: ",
