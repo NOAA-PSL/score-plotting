@@ -22,8 +22,8 @@ def run(experiment_list = [
             'fit_t_data', # fit of temperature data (K)
             'fit_q_data', # fit of moisture data (% of qsaturation guess)
         ],
-        start_date='1987-10-01 00:00:00',
-        stop_date='2024-09-30 23:59:59'):
+        start_date='1990-10-01 00:00:00',
+        stop_date='2026-10-01 00:00:00'):
 
     plot_gsi_conv_fit_to_obs.prun(
         # Default is for fit of surface pressure data (hPa)

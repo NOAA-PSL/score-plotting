@@ -40,6 +40,8 @@ def config():
         'experiment_list': [
             'replay_observer_diagnostic_v1.1',
             '3dvar_coupledreanl_scoutrun_v2',
+            '3dvar_coupledreanl_scoutrun_sfs',
+            '3dvar_coupledreanl_scoutrun_sfsv3'
                          ],
         
         'experiment_plot_dict': {
@@ -71,10 +73,28 @@ def config():
             'ls2': '--',
             'zorder':2
             },
+        '3dvar_coupledreanl_scoutrun_sfs' : {
+            'color' : 'orange',
+            'color2': '#9b8d62',
+            'marker': '+',
+            'ls': '-',
+            'lw': 0.5,
+            'ls2': '--',
+            'zorder':3
+            },
+        '3dvar_coupledreanl_scoutrun_sfsv3' : {
+            'color' : 'orange',
+            'color2': '#9b8d62',
+            'marker': '+',
+            'ls': '-',
+            'lw': 0.5,
+            'ls2': '--',
+            'zorder':3
+            },
         },
         'region':'global',
         #'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],
-        'sensor_list': ['avhrr', 'viirs', 'amsr2', 'ssmis'],
+        'sensor_list': ['multiple', 'avhrr', 'viirs', 'amsr2', 'ssmis'],
         'variable_list': ['seaSurfaceTemperature', 'seaIceFraction'],
         'units': {'seaSurfaceTemperature': r'$^{\circ}$C',
                   'seaIceFraction': 'unitless'},
@@ -95,10 +115,14 @@ def config():
                          "xbt": "expendable bathythermograph (XBT)",
                          "ctd": "conductivity-temperature-depth (CTD)",
                          "mbt": "mechanical bathythermograph (MBT)",
+                         "multiple": "SST multi-sensor L3 (ODYSSEA)",
                          "avhrr": "Advanced Very-High Resolution Radiometer",
                          "viirs": "Visible Infrared Imaging Radiometer Suite",
                          "amsr2": "Advanced Microwave Scanning Radiometer 2",
-                         "ssmis": "Special Sensor Microwave Imager/Sounder"}
+                         "ssmis": "Special Sensor Microwave Imager/Sounder",
+                         "3dvar_coupledreanl_scoutrun_sfs": 'SFS-test',
+                         "3dvar_coupledreanl_scoutrun_sfsv3": 'SFSv0.3',
+                         }
                          
     return(config_dict, friendly_names_dict)
     
@@ -745,7 +769,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
 def main(start_date=None, stop_date=None):
     """
     """
-    prun(sensor_list=['avhrr', 'viirs'],
+    prun(sensor_list=['multiple','avhrr', 'viirs'],
          variable_list=['seaSurfaceTemperature'],
          start_date=start_date,
          stop_date=stop_date)
