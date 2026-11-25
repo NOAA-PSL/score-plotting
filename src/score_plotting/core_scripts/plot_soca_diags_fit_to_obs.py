@@ -344,7 +344,7 @@ class SOCADiagsFit2ObsFig(object):
                                      
             for sensor, sat_short_name, level, experiment_timeseries_dict in row_list:
                     self.experiment_timeseries_dict = experiment_timeseries_dict
-                    sat_level = ' '.join(str(x) for x in (satellite_names.get_longname(sat_short_name), level) if pd.notna(x))
+                    sat_level = ' '.join(str(x) for x in (satellite_names.get_longname(sat_short_name), level) if pd.notna(x) and x != 'unknown')
                     row_title = f'{self.friendly_names_dict[sensor]}\n{sat_level}'
                     
                     self.db_name = os.getenv('SCORE_POSTGRESQL_DB_NAME')        
