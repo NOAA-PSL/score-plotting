@@ -74,7 +74,7 @@ def config():
         },
         'region':'global',
         #'sensor_list': ['ctd', 'mbt', 'osd', 'xbt'],
-        'sensor_list': ['avhrr', 'viirs', 'multiple', 'amsr2', 'ssmis'],
+        'sensor_list': ['avhrr', 'viirs', 'amsr2', 'ssmis'],
         'variable_list': ['seaSurfaceTemperature', 'seaIceFraction'],
         'units': {'seaSurfaceTemperature': r'$^{\circ}$C',
                   'seaIceFraction': 'unitless'},
@@ -97,7 +97,6 @@ def config():
                          "mbt": "mechanical bathythermograph (MBT)",
                          "avhrr": "Advanced Very-High Resolution Radiometer",
                          "viirs": "Visible Infrared Imaging Radiometer Suite",
-                         "multiple": "Multiple sensors",
                          "amsr2": "Advanced Microwave Scanning Radiometer 2",
                          "ssmis": "Special Sensor Microwave Imager/Sounder"}
                          
@@ -746,7 +745,7 @@ def prun(experiment_list=None, sensor_list=None, variable_list=None, start_date=
 def main(start_date=None, stop_date=None):
     """
     """
-    prun(sensor_list=['avhrr', 'viirs', 'multiple'],
+    prun(sensor_list=['avhrr', 'viirs'],
          variable_list=['seaSurfaceTemperature'],
          start_date=start_date,
          stop_date=stop_date)
